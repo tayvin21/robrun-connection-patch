@@ -66,3 +66,5 @@ Reads the game log and temporarily relays stalled battle connections. After forw
 The source ZIP downloads the runnable package on first launch and checks its pinned checksum. Internet access is required for that preparation.
 
 **AI-assisted:** Developed with AI assistance; may contain mistakes.
+
+**Maintainers:** how it works, what breaks it after a game update, and how to release are in [docs/MAINTAINING.md](docs/MAINTAINING.md). Version history is in [CHANGELOG.md](CHANGELOG.md).

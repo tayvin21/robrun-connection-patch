@@ -10,11 +10,11 @@ Attempts to recover stalled server joins without restarting ROB RUN.
 
 **Security notice:** Defender flagged the withdrawn v0.2.0 ZIP as `Trojan:Script/Wacatac.B!ml`. A false positive has not been confirmed. Do not override antivirus protection; a clean scan is not a safety guarantee.
 
-**Recommended version: [v0.2.4](https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.2.4)**, the current download. It is v0.2.3 plus a simple AI-assisted cleanup (dead code removed, a stale link fixed, lint tidied) with no intended behavior change. v0.2.3 is the version prototype testing recovered stalled joins with, and stays available if you want it; older releases are kept only so old links work. Real long-session and affected-user confirmation of any version is still pending.
+**Recommended version: [v0.2.5](https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.2.5)**, the current download. **If you use v0.2.4 or older, upgrade: after the game update to build 26535791 (Nov 9, 2026) they no longer recognise a stalled join and do nothing.** v0.2.5 reads the changed game log line. Older releases are kept only so old links work. Affected-user confirmation is still pending.
 
 ## How to run
 
-1. [Download the ZIP](https://github.com/tayvin21/robrun-connection-patch/releases/download/v0.2.4/ROB-RUN-Connection-Patch.zip). Requires Windows 10/11 **x64**. All dependencies are included.
+1. [Download the ZIP](https://github.com/tayvin21/robrun-connection-patch/releases/download/v0.2.5/ROB-RUN-Connection-Patch.zip). Requires Windows 10/11 **x64**. All dependencies are included.
 2. Right-click the ZIP and select **Extract All**.
 3. With ROB RUN open, run **START.cmd**. Read the warning, choose **R** (logs on) or **N** (logs off), and approve administrator access. **No game restart required.**
 
@@ -22,7 +22,7 @@ By choosing R or N, you acknowledge this is unofficial, could get you banned, an
 
 The window shows **ARMED / TESTING / CONNECTED**. Press **Enter**, or choose **S** in START, to request a safe stop; leave the relayed location normally. Closing the window mid-session can disconnect you.
 
-**v0.2.5 (unreleased):** game build 26535791 added `isProxyPreferred=...` to the battle address log line, so earlier versions never recognised the battle server and never started a repair. This version reads the new line. Untested on a live join so far.
+**v0.2.5:** game build 26535791 added `isProxyPreferred=...` to the battle address log line, so earlier versions never recognised the battle server and never started a repair. This version reads the new line. In one test session on build 26535791 it repaired 2 of 2 stalled joins (on two different servers) within about 5 seconds, where the previous version did nothing and the game kept failing for over a minute. Two repairs is a small sample, and the game's separate server-side kicks after a successful join are not something this patch can fix.
 
 **v0.2.4:** cleanup only, no intended behavior change. **v0.2.3:** removes the one-hour idle shutdown. The helper stays armed while the game is running unless you stop it or disable automatic rearming. Retry limits now show a warning. **PATCH IS STOPPED** means an open window is no longer helping. For upgrades, safely stop the old copy before running the new ZIP from a separate folder.
 

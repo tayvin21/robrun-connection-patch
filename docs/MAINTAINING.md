@@ -71,6 +71,16 @@ each within about 5 seconds of the join starting (the patch waits 2 seconds befo
 stall retried 11 times over a minute and failed. This is a small sample from one machine. It is not proof of cause for
 every report, and it says nothing about the separate problem below.
 
+**Unverified report, do not advertise:** after the announced server-side changes, some users said that running the patch also reduces
+their general lag and ping, and that server DDoS problems had eased. Nothing measured supports a link. The patch only acts
+after a stalled join, only for that player, and sends a handful of packets per repair; download counts (a few dozen) are far
+too low to affect servers. The server-side changes, the game update, or the attack ending are the likelier causes, and
+stalls were still occurring on this PC after the announced server patch. One mechanism is conceivable but untested: while a
+route is active, the relayed traffic leaves through the physical network adapter (`IP_UNICAST_IF`, chosen with
+`GetBestInterface`), so for a player whose default route goes through a VPN or an unusual path it could take a different
+route to that one battle server. To test properly, log round-trip time to the battle server with and without the relay on the same
+join (alternate runs, same server, same hour) and compare; until that exists, keep this out of the README and release notes.
+
 **Not fixed and not fixable here:** the server sometimes kicks a player right after a clean connect
 (`Successfully joined room`, then `DisconnectedNetworkPeerPacket` and `NotifyDisconnected UserKicked`). This happens
 with no stall and with no patch involved; it is server-side. A "fall under the map, then get kicked" report is this,

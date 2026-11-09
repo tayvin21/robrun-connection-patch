@@ -18,7 +18,7 @@ sys.dont_write_bytecode = True
 import diagnostics
 import transport
 
-VERSION = '0.2.2'
+VERSION = '0.2.3'
 ROOT = Path(__file__).resolve().parent
 WARNING = '''UNOFFICIAL EXPERIMENTAL PATCH - NOT APPROVED BY KEFIR OR EASY ANTI-CHEAT.
 THIS COULD GET YOU BANNED. ACCOUNT SAFETY IS UNKNOWN. USE AT YOUR OWN RISK.
@@ -45,6 +45,7 @@ class Proposal:
         self.started = now
         self.baseline = 0
         self.changed = 0
+        self.limit_reported = False
 
     def process(self, payload, now, replied):
         sessions = inspect_connect(payload)
@@ -101,6 +102,11 @@ class Relay(transport.Relay):
             if (ip, sp) == self.target:
                 state = self.trials.setdefault(key, Proposal(time.monotonic()))
                 payload, phase = state.process(payload, time.monotonic(), flow.replied)
+                if phase == 'limit_reached':
+                    if not state.limit_reported:
+                        self.report('retry_limit')
+                        state.limit_reported = True
+                    phase = None
                 if phase:
                     self.report('connect', phase=phase, seconds=round(time.monotonic() - state.started, 3), baseline=state.baseline, changed=state.changed)
         try:
@@ -175,6 +181,57 @@ def auto_rearm_enabled():
         return False
 
 
+def report_transport(text, report):
+    if 'SERVER ANSWERED' in text:
+        report('reply')
+    elif text.startswith('REPAIRED:'):
+        report('connected')
+    elif text.startswith('Could not add route:'):
+        report('route_failed')
+    elif text.startswith('Hourly limit of '):
+        report('budget_limit')
+
+
+def watch_session(watcher, relay, guardian, stopping, report):
+    next_game_check = 0
+    notified = False
+    while True:
+        try:
+            if (ROOT / 'stop.request').exists():
+                stopping.set()
+            watcher.allow_trials = not stopping.is_set()
+            if time.monotonic() >= next_game_check:
+                game = subprocess.run(['powershell.exe', '-NoProfile', '-Command', "if (Get-Process -Name 'ROB RUN' -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"], capture_output=True, creationflags=transport.CREATE_NO_WINDOW, timeout=15)
+                next_game_check = time.monotonic() + 5
+                if game.returncode == 1:
+                    watcher.end_move()
+                    report('game_exit')
+                    return
+                if game.returncode != 0:
+                    raise OSError('Could not check game process')
+            watcher.poll()
+            if relay.error:
+                raise RuntimeError(relay.error)
+            if guardian.poll() is not None:
+                raise RuntimeError('Cleanup guardian stopped unexpectedly')
+            if watcher.ended:
+                watcher.ended = False
+                if not auto_rearm_enabled():
+                    report('auto_stop')
+                    stopping.set()
+                elif not stopping.is_set():
+                    report('armed')
+            if stopping.is_set():
+                if not relay.allowed:
+                    return
+                if not notified:
+                    report('stopping')
+                    notified = True
+            time.sleep(0.1)
+        except KeyboardInterrupt:
+            stopping.set()
+
+
 def guard(parent):
     """Remove the helper's remaining routes after its process exits."""
     kernel = ctypes.WinDLL('kernel32', use_last_error=True)
@@ -235,7 +292,11 @@ def run(opt):
                   'reply': 'Server replied', 'ended': 'Location ended; route removed',
                   'stopping': 'STOP REQUESTED - waiting for you to leave this location normally',
                   'cleanup': 'STOPPED - temporary adapter released', 'error': 'ERROR - see local diagnostic code',
-                  'route_failed': 'Could not add temporary route', 'idle_stop': 'Stopped after 60 idle minutes'}
+                  'route_failed': 'Could not add temporary route',
+                  'budget_limit': 'WAITING - hourly source-port limit reached; new recovery attempts resume as the limit clears',
+                  'retry_limit': 'NOT RECOVERED - handshake retry limit reached for this connection; still forwarding, no further edits',
+                  'game_exit': 'STOPPING - ROB RUN is no longer running',
+                  'auto_stop': 'STOPPING - automatic rearm is disabled in Options'}
         if event == 'connect' and fields.get('phase') == 'fresh_proposal' and fields.get('changed') == 1:
             print('TESTING - fresh handshake proposed; waiting for reply', flush=True)
         elif event == 'connected':
@@ -244,15 +305,7 @@ def run(opt):
         elif event in labels:
             print(labels[event], flush=True)
 
-    def transport_log(text):
-        if 'SERVER ANSWERED' in text:
-            report('reply')
-        elif text.startswith('REPAIRED:'):
-            report('connected')
-        elif text.startswith('Could not add route:'):
-            report('route_failed')
-
-    transport.log = transport_log
+    transport.log = lambda text: report_transport(text, report)
     try:
         if adapters_present():
             print('Another ROB RUN relay adapter exists. Leave its location and stop that helper first.')
@@ -302,47 +355,7 @@ def run(opt):
                 pass
             stopping.set()
         threading.Thread(target=request_stop, daemon=True).start()
-        deadline = time.monotonic() + 3600
-        next_game_check = 0
-        notified = False
-        while True:
-            try:
-                if (ROOT / 'stop.request').exists():
-                    stopping.set()
-                watcher.allow_trials = not stopping.is_set()
-                if time.monotonic() >= next_game_check:
-                    game = subprocess.run(['powershell.exe', '-NoProfile', '-Command', "if (Get-Process -Name 'ROB RUN' -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"], capture_output=True, creationflags=transport.CREATE_NO_WINDOW, timeout=15)
-                    next_game_check = time.monotonic() + 5
-                    if game.returncode == 1:
-                        watcher.end_move()
-                        break
-                    if game.returncode != 0:
-                        raise OSError('Could not check game process')
-                watcher.poll()
-                if relay.error:
-                    raise RuntimeError(relay.error)
-                if guardian.poll() is not None:
-                    raise RuntimeError('Cleanup guardian stopped unexpectedly')
-                if watcher.ended:
-                    watcher.ended = False
-                    deadline = time.monotonic() + 3600
-                    if not auto_rearm_enabled():
-                        stopping.set()
-                    elif not stopping.is_set():
-                        report('armed')
-                if stopping.is_set():
-                    if not relay.allowed:
-                        break
-                    if not notified:
-                        report('stopping')
-                        notified = True
-                    # Stop is deferred while forwarding an active assignment.
-                if not relay.allowed and time.monotonic() > deadline:
-                    report('idle_stop')
-                    break
-                time.sleep(0.1)
-            except KeyboardInterrupt:
-                stopping.set()
+        watch_session(watcher, relay, guardian, stopping, report)
     except Exception as error:
         report('error', result=type(error).__name__)
         print('Patch stopped because of an error. Do not disable EAC or antivirus to run it.', flush=True)

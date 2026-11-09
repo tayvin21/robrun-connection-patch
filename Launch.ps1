@@ -63,6 +63,10 @@ try {
     if (Test-Path -LiteralPath $stopRequest) { Remove-Item -LiteralPath $stopRequest }
     & (Join-Path $PSScriptRoot 'runtime\python.exe') @patchArguments
     $resultCode = $LASTEXITCODE
+    $Host.UI.RawUI.WindowTitle = 'ROB RUN - PATCH STOPPED'
+    Write-Host ''
+    Write-Host 'PATCH IS STOPPED. This window is no longer watching or repairing joins.' -ForegroundColor Yellow
+    Write-Host 'Run START.cmd again to enable it. Check the messages above for the stop reason.'
     [void](Read-Host 'Press Enter to close')
     exit $resultCode
 } catch {

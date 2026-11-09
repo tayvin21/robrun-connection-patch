@@ -7,7 +7,8 @@ import threading
 LIMIT = 128 * 1024
 FIELDS = {'phase', 'seconds', 'changed', 'baseline', 'result', 'version'}
 EVENTS = {'armed', 'trial', 'connect', 'reply', 'connected', 'ended', 'cleanup',
-          'error', 'stopping', 'startup', 'idle_stop', 'unsupported', 'route_failed'}
+          'error', 'stopping', 'startup', 'idle_stop', 'unsupported', 'route_failed',
+          'budget_limit', 'retry_limit', 'game_exit', 'auto_stop'}
 
 
 class Diagnostics:

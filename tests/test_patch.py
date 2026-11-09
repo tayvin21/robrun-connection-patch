@@ -6,6 +6,7 @@ import tempfile
 import threading
 import unittest
 from unittest.mock import patch as mock
+from unittest.mock import Mock
 import zlib
 import diagnostics
 import patch
@@ -95,6 +96,86 @@ class LifecycleTests(unittest.TestCase):
         relay = FakeRelay(); watcher = patch.Watcher('does-not-exist', relay, lambda *a, **k: None)
         self.start(watcher); watcher.allow_trials = False; watcher.check_stall()
         self.assertFalse(relay.allowed)
+
+class LongSessionTests(unittest.TestCase):
+    start = LifecycleTests.start
+    def test_still_repairs_after_two_hours_of_healthy_play(self):
+        relay = FakeRelay(); relay.error = None
+        events = []
+        watcher = patch.Watcher('does-not-exist', relay, lambda event, **kw: events.append(event))
+        clock = [0]
+        polls = []
+
+        def advance(_): clock[0] += 1800
+        def poll():
+            polls.append(clock[0])
+            if clock[0] in (0, 1800, 3600):
+                self.start(watcher)
+                watcher.read_line('PeerConnect complete id=battle address=5.8.93.226:36706')
+                watcher.read_line('NetworkStep - Changed on "InRealmNotInBattle".')
+            elif clock[0] == 5400:
+                self.start(watcher)
+                watcher.check_stall()
+                self.assertTrue(relay.allowed)
+            elif clock[0] == 7200:
+                watcher.read_line('NetworkStep - Changed on "InRealmNotInBattle".')
+
+        with tempfile.TemporaryDirectory() as folder, mock.object(patch, 'ROOT', Path(folder)), \
+             mock.object(patch.time, 'monotonic', side_effect=lambda: clock[0]), \
+             mock.object(patch.time, 'sleep', side_effect=advance), \
+             mock.object(patch.subprocess, 'run', side_effect=[Mock(returncode=0) for _ in range(5)] + [Mock(returncode=1)]), \
+             mock.object(watcher, 'poll', side_effect=poll):
+            patch.watch_session(watcher, relay, Mock(poll=Mock(return_value=None)), threading.Event(), lambda event, **kw: events.append(event))
+        self.assertEqual(polls, [0, 1800, 3600, 5400, 7200])
+        self.assertIn('trial', events)
+        self.assertEqual(events[-1], 'game_exit')
+        self.assertFalse(relay.allowed)
+
+    def test_stop_still_waits_for_active_route(self):
+        relay = FakeRelay(); relay.error = None; relay.allowed.add('5.8.93.226')
+        watcher = patch.Watcher('does-not-exist', relay, lambda *a, **kw: None)
+        stopping = threading.Event(); stopping.set()
+        events = []
+        def leave(_): relay.allowed.clear()
+        with tempfile.TemporaryDirectory() as folder, mock.object(patch, 'ROOT', Path(folder)), \
+             mock.object(patch.subprocess, 'run', return_value=Mock(returncode=0)), \
+             mock.object(patch.time, 'sleep', side_effect=leave), mock.object(watcher, 'poll') as poll:
+            patch.watch_session(watcher, relay, Mock(poll=Mock(return_value=None)), stopping, lambda event, **kw: events.append(event))
+        self.assertEqual(poll.call_count, 2)
+        self.assertFalse(watcher.allow_trials)
+        self.assertEqual(events, ['stopping'])
+
+    def test_hourly_limit_is_reported_and_recovers_when_budget_expires(self):
+        events = []
+        relay = patch.Relay(None, '127.0.0.1', 1, lambda *a, **kw: None)
+        relay.opened.extend([0] * 60)
+        watcher = patch.Watcher('does-not-exist', relay, lambda event, **kw: events.append(event))
+        with mock.object(transport, 'log', side_effect=lambda text: patch.report_transport(text, lambda event: events.append(event))), \
+             mock.object(transport, 'netsh', return_value=(0, '')), \
+             mock.object(patch.time, 'monotonic', return_value=10):
+            self.start(watcher)
+            watcher.check_stall(); watcher.check_stall()
+            self.assertFalse(relay.allowed)
+            self.assertEqual(events, ['budget_limit'])
+            with mock.object(patch.time, 'monotonic', return_value=3601):
+                watcher.check_stall()
+            self.assertTrue(relay.allowed)
+            self.assertEqual(events, ['budget_limit', 'trial'])
+
+    def test_retry_limit_reports_once_and_keeps_forwarding(self):
+        events = []
+        relay = patch.Relay(None, '127.0.0.1', 1, lambda event, **kw: events.append(event))
+        relay.allowed.add('5.8.93.226'); relay.target = ('5.8.93.226', 36706)
+        sock = Mock()
+        packet = transport.build_udp_packet(socket.inet_aton('127.0.0.1'), socket.inet_aton('5.8.93.226'), 50000, 36706, connect_packet())
+        with mock.object(relay, 'open_socket', side_effect=lambda flow: setattr(flow, 'sock', sock)):
+            for second in range(30):
+                with mock.object(patch.time, 'monotonic', return_value=second):
+                    relay.handle_packet(packet)
+        self.assertEqual(events.count('retry_limit'), 1)
+        self.assertEqual(sock.sendto.call_count, 30)
+        self.assertEqual(sum(p.changed for p in relay.trials.values()), 12)
+
 
 class DiagnosticTests(unittest.TestCase):
     def test_auto_rearm_setting_defaults_and_opt_out(self):

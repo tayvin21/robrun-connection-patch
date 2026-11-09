@@ -10,6 +10,10 @@ Attempts to recover stalled server joins without restarting ROB RUN.
 
 **Security notice:** Defender flagged the withdrawn v0.2.0 ZIP as `Trojan:Script/Wacatac.B!ml`. A false positive has not been confirmed. Do not override antivirus protection; a clean scan is not a safety guarantee.
 
+**Recommended version: [v0.2.3](https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.2.3)** (the current download, and the one prototype testing recovered stalled joins with). Older releases are kept only so old links still work. Real long-session and affected-user confirmation is still pending.
+
+**Source note:** `main` has one commit after v0.2.3, a simple AI-assisted cleanup (dead code removed, one stale link fixed, lint tidied) with no intended behavior change. It is not released; the v0.2.3 ZIP above is unaffected.
+
 ## How to run
 
 1. [Download the ZIP](https://github.com/tayvin21/robrun-connection-patch/releases/download/v0.2.3/ROB-RUN-Connection-Patch.zip). Requires Windows 10/11 **x64**. All dependencies are included.

@@ -1,7 +1,7 @@
 """Live ANSI status view for the helper's console window (PowerShell, cmd or Windows Terminal).
 
-Pure rendering over dashboard.Tracker snapshots. Shows the same facts as the web page: which servers the game is
-connected to or connecting to, every attempt, and what the patch did. Nothing here reads tokens or ids.
+Pure rendering over tracking.Tracker snapshots: which servers the game is connected to or connecting to, every
+attempt, and what the patch did. Nothing here reads tokens or ids.
 """
 import ctypes
 import os
@@ -214,7 +214,10 @@ class View:
         status = self.p(tool['label'].upper(), tone, 'bold') + self.p(f'  |  {game}', 'muted')
         gap = max(width - vlen(head) - vlen(status) - 1, 1)
         rule = self.p(self.g['rule'] * (width - 2), 'muted')
-        lines = [head + ' ' * gap + status, ' ' + rule, ' ' + self.counts(snap), '']
+        lines = [head + ' ' * gap + status, ' ' + rule]
+        if snap.get('update'):
+            lines.append(' ' + self.p(f"UPDATE v{snap['update']} is available.", 'warn', 'bold') + self.p(' Stop this window, run START.cmd and press V.', 'muted'))
+        lines += [' ' + self.counts(snap), '']
         lines += self.lanes(snap, width, tick) + ['']
         lines += [' ' + x for x in self.attempts(snap, width)] + ['']
         spare = height - len(lines) - 6

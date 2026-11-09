@@ -8,3 +8,5 @@ status.json
 stop.request
 __pycache__/
 *.pyc
+update-check.json
+dashboard.json

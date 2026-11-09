@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([ValidateSet('Menu','Status','Stop','Restart','Auto','Force','Uninstall','Export')][string]$Mode = 'Menu')
+param([ValidateSet('Menu','Status','Stop','Restart','Auto','Updates','Update','Force','Uninstall','Export')][string]$Mode = 'Menu')
 $ErrorActionPreference = 'Stop'
 $Host.UI.RawUI.WindowTitle = 'ROB RUN patch controls'
 $root = [IO.Path]::GetFullPath($PSScriptRoot)
@@ -16,6 +16,15 @@ function Get-PatchProcess {
     @(Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" | Where-Object {
         $_.ExecutablePath -eq $runtimePath -and $_.CommandLine -like ('*' + $patchPath + '*') -and $_.CommandLine -notlike '*--guard*'
     })
+}
+function Set-Setting($name, $value) {
+    $file = Join-Path $appRoot 'settings.json'
+    $settings = [ordered]@{}
+    if ((Test-Path -LiteralPath $file) -and (Get-Item -LiteralPath $file).Length -le 4096) {
+        try { $old = Get-Content -LiteralPath $file -Raw | ConvertFrom-Json; foreach ($p in $old.PSObject.Properties) { $settings[$p.Name] = $p.Value } } catch { $settings = [ordered]@{} }
+    }
+    $settings[$name] = $value
+    [IO.File]::WriteAllText($file, ($settings | ConvertTo-Json -Compress))
 }
 function Request-Stop {
     [IO.File]::WriteAllText((Join-Path $appRoot 'stop.request'),'stop')
@@ -38,9 +47,10 @@ try {
     if ($Mode -eq 'Menu') {
         Write-Host 'UNOFFICIAL PATCH - COULD GET YOU BANNED. NO SAFETY GUARANTEE.' -ForegroundColor Yellow
         Write-Host '1 Status   2 Safe stop   3 Restart helper   4 Automatic rearm on/off'
-        Write-Host '5 Emergency stop (may disconnect game)   6 Uninstall   7 Export logs   Enter Exit'
+        Write-Host '5 Emergency stop (may disconnect game)   6 Uninstall   7 Export logs'
+        Write-Host '8 Check for / install update   9 Update checks on/off   Enter Exit'
         $choice = Read-Host 'Choose'
-        $Mode = switch ($choice) { '1' {'Status'} '2' {'Stop'} '3' {'Restart'} '4' {'Auto'} '5' {'Force'} '6' {'Uninstall'} '7' {'Export'} default {exit 0} }
+        $Mode = switch ($choice) { '1' {'Status'} '2' {'Stop'} '3' {'Restart'} '4' {'Auto'} '5' {'Force'} '6' {'Uninstall'} '7' {'Export'} '8' {'Update'} '9' {'Updates'} default {exit 0} }
     }
     $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     if (-not $admin -and $Mode -in @('Status','Restart','Force','Uninstall')) {
@@ -66,9 +76,17 @@ try {
         'Auto' {
             $answer = Read-Host 'Rearm automatically after leaving a repaired location? Y = on, N = stop after that location'
             if ($answer -notin @('Y','N')) { exit 0 }
-            [IO.File]::WriteAllText((Join-Path $appRoot 'settings.json'), ('{"auto_rearm":' + ($answer -eq 'Y').ToString().ToLowerInvariant() + '}'))
+            Set-Setting 'auto_rearm' ($answer -eq 'Y')
             Write-Host 'Saved. No game restarts and no Windows autostart are enabled.'
         }
+        'Updates' {
+            Write-Host 'When on, START asks GitHub (api.github.com, one anonymous request at most every 6 hours) whether a newer release exists. Nothing else is sent.'
+            $answer = Read-Host 'Check for updates at start? Y = on, N = off'
+            if ($answer -notin @('Y','N')) { exit 0 }
+            Set-Setting 'check_updates' ($answer -eq 'Y')
+            Write-Host 'Saved.'
+        }
+        'Update' { & (Join-Path $appRoot 'Update.ps1') -Mode Install }
         'Force' {
             Write-Host 'Emergency stop CAN DISCONNECT your relayed game session.' -ForegroundColor Red
             if ((Read-Host 'Type STOP to continue') -cne 'STOP') { exit 0 }
@@ -88,7 +106,7 @@ try {
             Wait-ForStop
             $manifest = Join-Path $appRoot 'SHA256SUMS.txt'
             if (-not (Test-Path -LiteralPath $manifest)) { throw 'Release manifest missing. Patch stopped; remove its extracted folder manually.' }
-            $owned = @('START.cmd','UNINSTALL.cmd','app/README.txt','app/Launch.ps1','app/Controls.ps1','app/patch.py','app/transport.py','app/diagnostics.py','app/LICENSE','app/THIRD-PARTY.md','app/WINTUN-LICENSE.txt','app/wintun.dll')
+            $owned = @('START.cmd','UNINSTALL.cmd','DEMO.cmd','app/README.txt','app/VERSION','app/Launch.ps1','app/Controls.ps1','app/Update.ps1','app/patch.py','app/transport.py','app/diagnostics.py','app/tracking.py','app/console.py','app/demo.py','app/LICENSE','app/THIRD-PARTY.md','app/WINTUN-LICENSE.txt','app/wintun.dll')
             $kept = 0
             foreach ($line in [IO.File]::ReadAllLines($manifest)) {
                 if ($line -notmatch '^([a-f0-9]{64})  (.+)$') { throw 'Invalid manifest.' }
@@ -101,7 +119,7 @@ try {
                     else { $kept++ }
                 }
             }
-            foreach ($relative in @('app\stop.request','app\status.json','app\settings.json','app\diagnostics-share.txt','app\logs\diagnostics.jsonl','app\logs\diagnostics.previous.jsonl','app\SHA256SUMS.txt')) {
+            foreach ($relative in @('app\stop.request','app\status.json','app\settings.json','app\update-check.json','app\diagnostics-share.txt','app\logs\diagnostics.jsonl','app\logs\diagnostics.previous.jsonl','app\SHA256SUMS.txt')) {
                 $target = Join-Path $root $relative
                 if (Test-Path -LiteralPath $target -PathType Leaf) { Remove-Item -LiteralPath $target -Force }
             }

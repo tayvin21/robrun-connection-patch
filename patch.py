@@ -6,6 +6,7 @@ import ctypes.wintypes as w
 import ipaddress
 import json
 import os
+import re
 from pathlib import Path
 import socket
 import struct
@@ -17,13 +18,13 @@ import zlib
 
 sys.dont_write_bytecode = True
 import console
-import dashboard
 import demo
 import diagnostics
+import tracking
 import transport
 
-VERSION = '0.3.0'
 ROOT = Path(__file__).resolve().parent
+VERSION = (ROOT / 'VERSION').read_text(encoding='ascii').strip()
 WARNING = '''UNOFFICIAL EXPERIMENTAL PATCH - NOT APPROVED BY KEFIR OR EASY ANTI-CHEAT.
 THIS COULD GET YOU BANNED. ACCOUNT SAFETY IS UNKNOWN. USE AT YOUR OWN RISK.
 May fail or disconnect you. Requires administrator access and changes network routing.
@@ -185,14 +186,14 @@ def auto_rearm_enabled():
         return False
 
 
-def view_setting():
-    """Which live view to show: console, web, both or plain (settings.json key 'view')."""
+def unicode_setting():
+    """True/False to force the symbol set (settings.json key 'unicode'); None lets the console decide."""
     try:
         with (ROOT / 'settings.json').open('rb') as stream:
-            value = json.loads(stream.read(4097)).get('view')
-        return value if value in ('console', 'web', 'both', 'plain') else 'both'
+            value = json.loads(stream.read(4097)).get('unicode')
+        return value if isinstance(value, bool) else None
     except (OSError, ValueError, AttributeError):
-        return 'both'
+        return None
 
 
 def report_transport(text, report):
@@ -299,8 +300,8 @@ def run(opt):
     diag = diagnostics.Diagnostics(ROOT / 'logs', enabled=not opt.no_logs)
     tun = relay = pump = None
     stopping = threading.Event()
-    tracker = dashboard.Tracker(VERSION)
-    page = None
+    tracker = tracking.Tracker(VERSION)
+    tracker.set_update(opt.update_available or '')
     live = []
 
     def say(text):
@@ -374,19 +375,12 @@ def run(opt):
         if starts:
             for line in lines[starts[-1]:]:
                 watcher.read_line(line)
-        if opt.view != 'plain':
-            tracker.backfill(transport.DEFAULT_LOG)
-            if not opt.no_logs:
-                tracker.backfill_tool(ROOT / 'logs' / 'diagnostics.jsonl')
-            watcher.observer = tracker.feed
-        if opt.view in ('web', 'both') and not opt.no_dashboard:
-            page = dashboard.serve(tracker, ROOT / 'ui')
-            if page:
-                with contextlib.suppress(OSError):
-                    (ROOT / 'dashboard.json').write_text(json.dumps({'url': page[1], 'pid': os.getpid()}), encoding='utf-8')
-                say('Status page (this PC only): ' + page[1] + '  (DASHBOARD.cmd opens it)')
-        if opt.view in ('console', 'both') and console.enable_vt():
-            live.append(console.Live(tracker))
+        tracker.backfill(transport.DEFAULT_LOG)
+        if not opt.no_logs:
+            tracker.backfill_tool(ROOT / 'logs' / 'diagnostics.jsonl')
+        watcher.observer = tracker.feed
+        if console.enable_vt():
+            live.append(console.Live(tracker, rich=unicode_setting()))
             live[0].start()
         report('armed')
         say('Press ENTER to stop safely. If connected through the relay, leave the location first. Local diagnostics: ' + ('OFF' if opt.no_logs else 'ON (256 KiB maximum; never uploaded)'))
@@ -409,12 +403,6 @@ def run(opt):
     finally:
         if live:
             live.pop().close()
-        if page:
-            with contextlib.suppress(Exception):
-                page[0].shutdown()
-                page[0].server_close()
-            with contextlib.suppress(OSError):
-                (ROOT / 'dashboard.json').unlink()
         try:
             if relay:
                 relay.stop = True
@@ -430,30 +418,19 @@ def run(opt):
 
 
 def run_demo(opt):
-    """Replay a scripted session through the same views. No game, no admin rights, no network changes."""
-    tracker = dashboard.Tracker(VERSION + ' demo')
+    """Replay a scripted session in the live view. No game, no admin rights, no network changes."""
+    tracker = tracking.Tracker(VERSION + ' demo')
+    tracker.set_update(opt.update_available or '')
     stop = threading.Event()
-    page = live = None
-    if opt.view in ('web', 'both'):
-        page = dashboard.serve(tracker, ROOT / 'ui')
-        print('DEMO status page (this PC only): ' + (page[1] if page else 'could not start'), flush=True)
-    if opt.view in ('console', 'both') and console.enable_vt():
-        live = console.Live(tracker)
-        if page:
-            live.log('Web view: ' + page[1])
+    live = None
+    if console.enable_vt():
+        live = console.Live(tracker, rich=unicode_setting())
         live.log('DEMO: a scripted session, not your game')
         live.start()
         threading.Thread(target=console.key_loop, args=(live, stop.set), daemon=True).start()
-    elif opt.view in ('console', 'both'):
-        print('This window cannot show the animated view; open the web page instead.', flush=True)
-    if live is None:
-        print('Press ENTER to end the demo.', flush=True)
-
-        def wait_for_enter():
-            with contextlib.suppress(EOFError, OSError):
-                input()
-                stop.set()
-        threading.Thread(target=wait_for_enter, daemon=True).start()
+    else:
+        print('This window cannot show the animated view. Run DEMO.cmd from PowerShell or Windows Terminal.', flush=True)
+        return 1
     demo.start(tracker, stop, opt.demo_speed)
     try:
         while not stop.is_set():
@@ -461,26 +438,26 @@ def run_demo(opt):
     except KeyboardInterrupt:
         stop.set()
     finally:
-        if live:
-            live.close()
-        if page:
-            page[0].shutdown()
-            page[0].server_close()
+        live.close()
     return 0
+
+
+def version_text(value):
+    if not re.fullmatch(r'[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,4}', value):
+        raise argparse.ArgumentTypeError('expected a version like 1.2.3')
+    return value
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--accept-risk', action='store_true')
     parser.add_argument('--no-logs', action='store_true')
-    parser.add_argument('--no-dashboard', action='store_true')
-    parser.add_argument('--view', choices=('console', 'web', 'both', 'plain'), default=None)
+    parser.add_argument('--update-available', type=version_text, default=None)
     parser.add_argument('--demo', action='store_true')
     parser.add_argument('--demo-speed', type=float, default=1.0)
     parser.add_argument('--export', action='store_true')
     parser.add_argument('--guard', type=int)
     opt = parser.parse_args()
-    opt.view = opt.view or (view_setting() if not opt.demo else 'both')
     if opt.export:
         count = diagnostics.export(ROOT / 'logs', ROOT / 'diagnostics-share.txt')
         print(f'Exported {count} events to {ROOT / "diagnostics-share.txt"} (maximum 128 KiB). Review before sharing. Nothing uploaded.')

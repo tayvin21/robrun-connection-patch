@@ -1,17 +1,13 @@
-"""Local, read-only status dashboard: what the game and the patch are doing right now.
+"""Session state for the live console view: what the game and the patch are doing right now.
 
 State comes from two places only: allowlisted fields of the game's Player.log lines, and the patch's own events.
-Account tokens, peer ids and every other log value are never parsed, stored or served. The page is served on
-127.0.0.1 only and has no actions.
+Account tokens, peer ids and every other log value are never parsed or stored.
 """
 import datetime
 import json
 import re
-import socketserver
 import threading
 import time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
 
 ROLES = ('user', 'region_user', 'battle')
 TIER_NAMES = {'user': 'Account server', 'region_user': 'Region server', 'battle': 'Battle server'}
@@ -60,6 +56,7 @@ class Tracker:
         self.game_running = None
         self.relay = {'routes': 0, 'flows': 0, 'ports_hour': 0, 'port_budget': 60, 'proposals': 0}
         self.last_disconnect = ''
+        self.update = ''
 
     # ---- game log -------------------------------------------------------------------------------------------
     def feed(self, line):
@@ -237,6 +234,10 @@ class Tracker:
                         join['outcome'] = 'repaired'
             self.revision += 1
 
+    def set_update(self, version):
+        with self.lock:
+            self.update = version
+
     def set_game(self, running):
         with self.lock:
             if self.game_running != running:
@@ -259,7 +260,7 @@ class Tracker:
             totals['kicked'] = sum(1 for j in joins if j.get('end_reason') == 'kicked')
             totals['failed_attempts'] = sum(1 for j in joins for a in j['attempts'] if a['outcome'] == 'failed')
             return {
-                'now': time.time(), 'revision': self.revision, 'game_running': self.game_running,
+                'now': time.time(), 'revision': self.revision, 'game_running': self.game_running, 'update': self.update,
                 'tool': dict(self.tool), 'relay': dict(self.relay), 'roles': roles, 'joins': joins,
                 'counts': {'connected': states.count('connected'),
                            'connecting': sum(1 for s in states if s in ('connecting', 'authorizing')),
@@ -304,7 +305,7 @@ class Tracker:
         return count
 
     def backfill(self, path, limit=MAX_BACKFILL):
-        """Read the current game log once, so the page starts with this session's history."""
+        """Read the current game log once, so the view starts with this session's history."""
         try:
             with open(path, 'rb') as stream:
                 stream.seek(0, 2)
@@ -319,82 +320,3 @@ class Tracker:
                 self.feed(raw.rstrip('\r'))
                 count += 1
         return count
-
-
-# ---- HTTP -----------------------------------------------------------------------------------------------------
-TYPES = {'.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
-         '.json': 'application/json', '.svg': 'image/svg+xml'}
-HEADERS = {
-    'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
-                               "connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
-    'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Cache-Control': 'no-store',
-    'Cross-Origin-Resource-Policy': 'same-origin', 'X-Frame-Options': 'DENY',
-}
-
-
-def make_handler(tracker, ui_root):
-    ui_root = Path(ui_root).resolve()
-
-    class Handler(BaseHTTPRequestHandler):
-        server_version = 'RobRunPatchStatus'
-
-        def log_message(self, *args):
-            pass
-
-        def _send(self, code, body, kind):
-            self.send_response(code)
-            self.send_header('Content-Type', kind)
-            self.send_header('Content-Length', str(len(body)))
-            for key, value in HEADERS.items():
-                self.send_header(key, value)
-            self.end_headers()
-            self.wfile.write(body)
-
-        def _host_ok(self):
-            host = (self.headers.get('Host') or '').lower()
-            port = self.server.server_address[1]
-            return host in (f'127.0.0.1:{port}', f'localhost:{port}')
-
-        def do_GET(self):
-            if not self._host_ok():
-                self._send(403, b'forbidden', 'text/plain')
-                return
-            path = self.path.split('?', 1)[0]
-            if path == '/api/state':
-                self._send(200, json.dumps(tracker.snapshot(), separators=(',', ':')).encode(), TYPES['.json'])
-                return
-            name = 'index.html' if path in ('/', '/index.html') else path.lstrip('/')
-            target = (ui_root / name).resolve()
-            if ui_root not in target.parents or target.suffix not in TYPES or not target.is_file():
-                self._send(404, b'not found', 'text/plain')
-                return
-            self._send(200, target.read_bytes(), TYPES[target.suffix])
-
-        def do_POST(self):
-            self._send(405, b'read only', 'text/plain')
-
-        do_PUT = do_DELETE = do_PATCH = do_POST
-
-    return Handler
-
-
-class LoopbackServer(ThreadingHTTPServer):
-    """No hostname lookup on bind: the stripped release runtime has no idna codec, which getfqdn needs."""
-    allow_reuse_address = False
-
-    def server_bind(self):
-        socketserver.TCPServer.server_bind(self)
-        self.server_name, self.server_port = self.server_address[:2]
-
-
-def serve(tracker, ui_root, preferred_port=38457):
-    """Start the page on loopback; returns (server, url) or None. Never raises: the patch must not depend on it."""
-    for port in (preferred_port, 0):
-        try:
-            server = LoopbackServer(('127.0.0.1', port), make_handler(tracker, ui_root))
-        except OSError:
-            continue
-        server.daemon_threads = True
-        threading.Thread(target=server.serve_forever, daemon=True).start()
-        return server, f'http://127.0.0.1:{server.server_address[1]}/'
-    return None

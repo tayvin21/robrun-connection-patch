@@ -10,29 +10,48 @@ Attempts to recover stalled server joins without restarting ROB RUN.
 
 **Security notice:** Defender flagged the withdrawn v0.2.0 ZIP as `Trojan:Script/Wacatac.B!ml`. A false positive has not been confirmed. Do not override antivirus protection; a clean scan is not a safety guarantee.
 
-**Recommended version: [v0.2.5](https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.2.5)**, the current download. **This is a post-hotfix patch: it exists because the game's Nov 9, 2026 hotfix (build 26535791) broke older versions. If you use v0.2.4 or older, upgrade: after that hotfix to build 26535791 (Nov 9, 2026) they no longer recognise a stalled join and do nothing.** v0.2.5 reads the changed game log line. Older releases are kept only so old links work. Affected-user confirmation is still pending.
+**Recommended version: [v0.3.0](https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.3.0).** Game build 26535791 (Nov 9, 2026) broke v0.2.4 and older: they no longer recognise a stalled join and do nothing. Use v0.2.5 or newer. See [CHANGELOG.md](CHANGELOG.md) for every version.
 
 ## How to run
 
-1. [Download the ZIP](https://github.com/tayvin21/robrun-connection-patch/releases/download/v0.2.5/ROB-RUN-Connection-Patch.zip). Requires Windows 10/11 **x64**. All dependencies are included.
+1. [Download the ZIP](https://github.com/tayvin21/robrun-connection-patch/releases/download/v0.3.0/ROB-RUN-Connection-Patch.zip). Requires Windows 10/11 **x64**. All dependencies are included.
 2. Right-click the ZIP and select **Extract All**.
 3. With ROB RUN open, run **START.cmd**. Read the warning, choose **R** (logs on) or **N** (logs off), and approve administrator access. **No game restart required.**
 
 By choosing R or N, you acknowledge this is unofficial, could get you banned, and may fail or disconnect you. No safety, reliability or anti-cheat compatibility is promised. You choose to use it at your own risk. Nothing here excludes rights that cannot legally be excluded.
 
-The window shows **ARMED / TESTING / CONNECTED**. Press **Enter**, or choose **S** in START, to request a safe stop; leave the relayed location normally. Closing the window mid-session can disconnect you.
+## The live view
 
-**v0.2.5:** game build 26535791 added `isProxyPreferred=...` to the battle address log line, so earlier versions never recognised the battle server and never started a repair. This version reads the new line. In one test session on build 26535791 it repaired 2 of 2 stalled joins (on two different servers) within about 5 seconds, where the previous version did nothing and the game kept failing for over a minute. Two repairs is a small sample, and the game's separate server-side kicks after a successful join are not something this patch can fix.
+The helper window is an animated display of what the game is doing, so you can see exactly what is happening:
 
-**v0.2.4:** cleanup only, no intended behavior change. **v0.2.3:** removes the one-hour idle shutdown. The helper stays armed while the game is running unless you stop it or disable automatic rearming. Retry limits now show a warning. **PATCH IS STOPPED** means an open window is no longer helping. For upgrades, safely stop the old copy before running the new ZIP from a separate folder.
+- how many servers the game is **connected to** and **connecting to** (account, region and battle), each with its address and ping;
+- every connection attempt on the selected server as a timing bar, with the patch's actions (repair started, edited proposal sent, server replied, connected through the relay) marked on it;
+- a history of recent joins: connected directly, repaired by the patch, did not connect, and whether the server ended it or kicked you.
 
-## Live status views (v0.3.0, preview)
+Keys: **1 2 3** pick a server, **ENTER** or **S** safe stop. Leave any relayed location normally before stopping. Closing the window mid-session can disconnect you. Status always has words and symbols, never colour alone.
 
-While the patch runs, its window shows an animated live view instead of scrolling lines: how many servers the game is connected to or connecting to (account, region, battle), every connection attempt with its timing, and what the patch did and when. Keys: **1 2 3** pick a server, **ENTER** or **S** safe stop. A web version of the same facts is served at an address like `http://127.0.0.1:38457/`; **DASHBOARD.cmd** opens it. The web page has a join history with filters, a per-attempt timeline, light and dark themes, and a button that copies a plain-text summary of one join for bug reports.
+It uses plain ASCII symbols by default and richer symbols in Windows Terminal. To force either, put `{"unicode": true}` or `{"unicode": false}` in `settings.json` next to `patch.py`.
 
-Try both **without the game, without administrator rights and without any network change**: **DEMO-CONSOLE.cmd** and **DEMO-WEB.cmd** replay a scripted session (a clean join, a server-side kick, a stall the patch could not see, and two stalls it repaired).
+**Try it without the game:** run **DEMO.cmd**. It replays a scripted session (a clean join, a server-side kick, a stall the patch could not see, and two stalls it repaired). No game, no administrator rights, no network changes.
 
-Privacy and safety: the page listens on this PC only (127.0.0.1), refuses requests with any other Host header, accepts reads only, sends a strict content security policy, and keeps everything in memory. It reads only the game log's server names, addresses, timings and outcomes; account tokens and player ids are never parsed, stored or shown. To choose a view, create `settings.json` next to `patch.py` with `{"view": "console"}`, `"web"`, `"both"` (default) or `"plain"` (the old scrolling text).
+## Updates
+
+START checks GitHub for a newer release and tells you in the launcher and at the top of the live view. To install it, choose **V** at the START prompt (or option 8 in the Controls menu).
+
+- **What is sent:** one anonymous request to `api.github.com` asking for this project's release list, at most once every six hours, from the un-elevated launcher (not from the administrator helper). GitHub sees your IP address, as with any web request. Nothing else is sent: no identifiers, no usage data.
+- **Turn it off:** Controls option 9, or `{"check_updates": false}` in `settings.json`.
+- **How an update installs:** the ZIP is downloaded from this repository's release page, checked against the SHA-256 published with that release, unpacked into a **new folder next to your current copy**, and its own file manifest is verified again. Your running copy is never modified, and your settings are carried over. Then stop the old window and run START in the new folder; delete the old folder whenever you like.
+- **What this does not protect against:** the SHA-256 comes from the same GitHub project as the download, so it catches corruption and tampering in transit, not a compromised project account. Releases are not code-signed.
+
+## Settings
+
+Optional `settings.json` next to `patch.py` (Controls writes the first two for you):
+
+| Key | Default | Effect |
+|--|--|--|
+| `auto_rearm` | `true` | Rearm after leaving a repaired location |
+| `check_updates` | `true` | Ask GitHub for new releases at start |
+| `unicode` | auto | Force the richer symbol set on or off |
 
 Choose **O** in START for status, helper restart, automatic rearming, emergency stop and log export. **UNINSTALL.cmd** removes the patch; it keeps your game and shared drivers. Technical files are in **app/**. No Windows autostart or automatic game restart is installed.
 

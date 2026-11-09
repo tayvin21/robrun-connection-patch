@@ -10,9 +10,9 @@ VENDORS = {
     'python': ('https://www.python.org/ftp/python/3.14.10/python-3.14.10-embed-amd64.zip', '90905e64a840557d8c1bc4f5b74db3d7ee85e3ffb217611cac1c7813acea4159'),
     'wintun': ('https://www.wintun.net/builds/wintun-0.14.1.zip', '07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51'),
 }
-FILES = ['START.cmd', 'UNINSTALL.cmd', 'DEMO-CONSOLE.cmd', 'DEMO-WEB.cmd', 'DASHBOARD.cmd', 'Launch.ps1', 'Controls.ps1', 'patch.py', 'transport.py',
-         'diagnostics.py', 'dashboard.py', 'console.py', 'demo.py', 'README.md', 'LICENSE', 'THIRD-PARTY.md']
-ROOT_FILES = ('START.cmd', 'UNINSTALL.cmd', 'DEMO-CONSOLE.cmd', 'DEMO-WEB.cmd', 'DASHBOARD.cmd')
+FILES = ['START.cmd', 'UNINSTALL.cmd', 'DEMO.cmd', 'Launch.ps1', 'Controls.ps1', 'Update.ps1', 'patch.py', 'transport.py',
+         'diagnostics.py', 'tracking.py', 'console.py', 'demo.py', 'VERSION', 'README.md', 'LICENSE', 'THIRD-PARTY.md']
+ROOT_FILES = ('START.cmd', 'UNINSTALL.cmd', 'DEMO.cmd')
 RUNTIME_FILES = {'python.exe','python314.dll','python3.dll','python314.zip','python314._pth',
                  'vcruntime140.dll','vcruntime140_1.dll','_ctypes.pyd','libffi-8.dll',
                  '_socket.pyd','select.pyd','LICENSE.txt'}
@@ -31,7 +31,6 @@ def main():
         destination = stage / name if name in ROOT_FILES else app / name
         if name == 'README.md': destination = app / 'README.txt'
         shutil.copy2(ROOT / name, destination)
-    shutil.copytree(ROOT / 'ui', app / 'ui')
     for name, (url, expected) in VENDORS.items():
         archive = downloads / (name + '.zip')
         if not archive.exists():

@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([switch]$Elevated, [switch]$NoLogs)
+param([switch]$Elevated, [switch]$NoLogs, [string]$UpdateVersion)
 $ErrorActionPreference = 'Stop'
 $installRoot = $PSScriptRoot
 if ((Split-Path $PSScriptRoot -Leaf) -eq 'app') { $installRoot = Split-Path $PSScriptRoot -Parent }
@@ -21,15 +21,26 @@ try {
     Write-Host 'Developed with AI assistance; may contain mistakes.'
     Write-Host ''
     if (-not $Elevated) {
+        $update = $null
+        $updater = Join-Path $PSScriptRoot 'Update.ps1'
+        if (Test-Path -LiteralPath $updater) {
+            try { $update = & $updater -Mode Check -Quiet | Select-Object -Last 1 } catch { $update = $null }
+        }
+        if ($update -and $update.Newer) {
+            $UpdateVersion = $update.Latest.ToString()
+            Write-Host ('UPDATE AVAILABLE: v' + $UpdateVersion + ' (this is v' + $update.Current + '). Choose V to install it.') -ForegroundColor Cyan
+            Write-Host ''
+        }
         Write-Host 'By choosing R or N, you acknowledge the ban/disconnection risks above.'
         Write-Host 'No safety, reliability or anti-cheat compatibility is promised.'
         Write-Host 'You choose to use this at your own risk. Non-excludable legal rights remain.'
         Write-Host ''
         Write-Host 'R = accept risk and run with local logs'
         Write-Host 'N = accept risk and run without local logs'
-        Write-Host 'S = safe stop    O = options / export logs    U = uninstall'
+        Write-Host 'S = safe stop    O = options / export logs    V = check for / install update    U = uninstall'
         Write-Host 'Anything else = cancel'
         $answer = Read-Host 'Choose'
+        if ($answer -eq 'V') { & $updater -Mode Install; [void](Read-Host 'Press Enter to close'); exit $LASTEXITCODE }
         $controlMode = switch ($answer) { 'S' {'Stop'} 'O' {'Menu'} 'U' {'Uninstall'} default {$null} }
         if ($controlMode) { & (Join-Path $PSScriptRoot 'Controls.ps1') -Mode $controlMode; exit $LASTEXITCODE }
         if ($answer -notin @('R','N')) { exit 0 }
@@ -54,11 +65,13 @@ try {
     if (-not $isAdmin) {
         $arguments = @('-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $PSCommandPath + '"'),'-Elevated')
         if ($NoLogs) { $arguments += '-NoLogs' }
+        if ($UpdateVersion -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,4}$') { $arguments += @('-UpdateVersion', $UpdateVersion) }
         $child = Start-Process powershell.exe -Verb RunAs -WindowStyle Normal -ArgumentList $arguments -Wait -PassThru
         exit $child.ExitCode
     }
     $patchArguments = @((Join-Path $PSScriptRoot 'patch.py'),'--accept-risk')
     if ($NoLogs) { $patchArguments += '--no-logs' }
+    if ($UpdateVersion -match '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,4}$') { $patchArguments += @('--update-available', $UpdateVersion) }
     $stopRequest = Join-Path $PSScriptRoot 'stop.request'
     if (Test-Path -LiteralPath $stopRequest) { Remove-Item -LiteralPath $stopRequest }
     & (Join-Path $PSScriptRoot 'runtime\python.exe') @patchArguments

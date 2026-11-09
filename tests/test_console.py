@@ -1,16 +1,12 @@
 import json
-import os
 from pathlib import Path
 import sys
-import tempfile
 import threading
 import unittest
-from urllib.error import HTTPError
-from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import console
-import dashboard
+import tracking
 import demo
 
 SECRET = 'FAKE-TOKEN-FOR-TESTS'
@@ -34,7 +30,7 @@ def clean_join(tracker, host='us-0-battle-gcore-27', ip='162.216.231.231'):
 
 class TrackerTests(unittest.TestCase):
     def test_clean_join_counts_one_connected_server_and_hides_secrets(self):
-        t = dashboard.Tracker('x')
+        t = tracking.Tracker('x')
         clean_join(t)
         snap = t.snapshot()
         self.assertEqual(snap['roles']['battle']['status'], 'connected')
@@ -46,7 +42,7 @@ class TrackerTests(unittest.TestCase):
             self.assertNotIn(forbidden, blob)
 
     def test_stall_retries_are_counted_and_patch_repair_is_attributed(self):
-        t = dashboard.Tracker('x')
+        t = tracking.Tracker('x')
         ip = '91.199.82.145'
         stamp(t, '[Network] NetworkStep - Changed on "InBattle".')
         stamp(t, '[Network] ConnectUpdater.Connect started id=battle isHostExist=True isNetworkHostStarted=True isAuthorized=False needConnectSpecial=True')
@@ -70,7 +66,7 @@ class TrackerTests(unittest.TestCase):
         self.assertEqual(t.snapshot()['totals']['repaired'], 1)
 
     def test_unrecovered_stall_is_failed_and_kick_is_recorded(self):
-        t = dashboard.Tracker('x')
+        t = tracking.Tracker('x')
         stamp(t, '[Network] NetworkStep - Changed on "InBattle".')
         stamp(t, '[Network] ConnectUpdater.PeerConnect started id=battle address=1.2.3.4:36602 rtt=40 attempts=0')
         stamp(t, '[Network] NetworkStep - Changed on "InRealmNotInBattle".')
@@ -84,7 +80,7 @@ class TrackerTests(unittest.TestCase):
         self.assertEqual(t.snapshot()['totals']['kicked'], 1)
 
     def test_demo_script_runs_and_ends(self):
-        t = dashboard.Tracker('x')
+        t = tracking.Tracker('x')
         stop = threading.Event()
         script = demo.Script(t, stop, speed=400.0)
         runner = threading.Thread(target=script.run, daemon=True)
@@ -97,52 +93,9 @@ class TrackerTests(unittest.TestCase):
         self.assertGreaterEqual(snap['totals']['repaired'], 1)
 
 
-class ServerTests(unittest.TestCase):
-    def setUp(self):
-        self.dir = tempfile.TemporaryDirectory()
-        (Path(self.dir.name) / 'index.html').write_text('<!doctype html><title>t</title>', encoding='utf-8')
-        (Path(self.dir.name) / 'secret.txt').write_text('no', encoding='utf-8')
-        outside = Path(self.dir.name).parent / 'outside.css'
-        outside.write_text('x{}', encoding='utf-8')
-        self.outside = outside
-        self.tracker = dashboard.Tracker('x')
-        self.server, self.url = dashboard.serve(self.tracker, self.dir.name, preferred_port=0)
-        self.port = self.server.server_address[1]
-
-    def tearDown(self):
-        self.server.shutdown()
-        self.server.server_close()
-        self.outside.unlink(missing_ok=True)
-        self.dir.cleanup()
-
-    def get(self, path, host=None, method='GET'):
-        request = Request(f'http://127.0.0.1:{self.port}{path}', method=method, headers={'Host': host} if host else {})
-        try:
-            with urlopen(request, timeout=5) as response:
-                return response.status, dict(response.headers), response.read()
-        except HTTPError as error:
-            return error.code, dict(error.headers), b''
-
-    def test_serves_state_and_page_with_strict_headers(self):
-        code, headers, body = self.get('/api/state')
-        self.assertEqual(code, 200)
-        self.assertIn('roles', json.loads(body))
-        code, headers, _ = self.get('/')
-        self.assertEqual(code, 200)
-        self.assertIn("default-src 'none'", headers['Content-Security-Policy'])
-        self.assertEqual(headers['X-Content-Type-Options'], 'nosniff')
-
-    def test_rejects_foreign_host_writes_odd_types_and_traversal(self):
-        self.assertEqual(self.get('/api/state', host='evil.example')[0], 403)
-        self.assertEqual(self.get('/api/state', method='POST')[0], 405)
-        self.assertEqual(self.get('/secret.txt')[0], 404)
-        self.assertEqual(self.get('/..%2foutside.css')[0], 404)
-        self.assertEqual(self.get('/../outside.css')[0], 404)
-
-
 class ConsoleTests(unittest.TestCase):
     def snapshot(self):
-        t = dashboard.Tracker('x')
+        t = tracking.Tracker('x')
         clean_join(t)
         stamp(t, '[Network] ConnectUpdater.Connect started id=user isHostExist=True isNetworkHostStarted=False isAuthorized=False needConnectSpecial=True')
         t.tool_event('trial')
@@ -174,6 +127,14 @@ class ConsoleTests(unittest.TestCase):
         self.assertIn('Connected', text)
         self.assertIn('Connecting', text)
         self.assertIn('PATCH RELAY', text)
+
+    def test_update_note_shows_in_header(self):
+        t = tracking.Tracker('0.3.0')
+        t.set_update('0.4.0')
+        shown = '\n'.join(console.ANSI.sub('', line) for line in console.View(rich=False).frame(t.snapshot(), 0, 100, 30))
+        self.assertIn('UPDATE v0.4.0 is available', shown)
+        quiet = '\n'.join(console.View(rich=False).frame(tracking.Tracker('0.3.0').snapshot(), 0, 100, 30))
+        self.assertNotIn('UPDATE', quiet)
 
 
 if __name__ == '__main__':

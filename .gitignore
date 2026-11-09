@@ -1,2 +1,9 @@
-moves.csv
 *.zip
+build/
+logs/
+diagnostics-share.txt
+settings.json
+status.json
+stop.request
+__pycache__/
+*.pyc

@@ -1,51 +1,31 @@
-# ROB RUN Hang Watcher
+# ROB RUN Connection Patch
 
-An unofficial community tool for ROB RUN on Windows. Not affiliated with or endorsed by Kefir.
+> **UNOFFICIAL. EXPERIMENTAL. NOT APPROVED BY KEFIR OR EASY ANTI-CHEAT.**
+>
+> **THIS COULD GET YOU BANNED. ACCOUNT SAFETY IS UNKNOWN. USE AT YOUR OWN RISK.**
+>
+> May fail or cause disconnects. Requires administrator access and changes network routing.
 
-Server moves in ROB RUN can sit on **"...waiting for status information"** for 60 seconds and then kick you back. This tool notices about 2 seconds in, so you can relaunch or get ready to retry instead of staring at the screen.
+Attempts to recover stalled server joins without restarting ROB RUN. Limited live testing; not a proven universal fix.
 
-**It does not fix the bug.** Kefir's servers choose which battle server you get, and nothing outside the game can make them choose again. The tool only tells you sooner. The bug itself is written up in [bug-report/FINDINGS.md](bug-report/FINDINGS.md).
+## How to run
 
-## Download and run
+1. [Download **ROB-RUN-Connection-Patch.zip**](https://github.com/tayvin21/robrun-connection-patch/releases/latest). Windows 10/11 **x64** only.
+2. **Extract all files.** Start ROB RUN normally through Steam.
+3. Double-click **START.cmd**, read the warning, choose **R** (local logs) or **N** (no logs), and approve the administrator prompt.
 
-1. Download `ROB-RUN-Hang-Watcher.zip` from [Releases](../../releases/latest).
-2. If Windows warns you about it, right-click the zip, choose Properties, tick Unblock, and click OK.
-3. Extract it to a normal folder. It won't work from inside the zip.
-4. Double-click `Start.bat`. A window opens, says it's running, and minimizes itself after 3 seconds. Leave it running while you play.
+By choosing R or N, you acknowledge this is unofficial, could get you banned, and may fail or disconnect you. No safety, reliability or anti-cheat compatibility is promised. You choose to use it at your own risk. Nothing here excludes rights that cannot legally be excluded.
 
-To hear the warning once, open a terminal in that folder and run `Start.bat -TestAlert`. To stop the watcher, open its window and press Ctrl+C.
+Leave the window open: **ARMED / TESTING / CONNECTED**. It rearms after you leave the location. Press **Enter** to request a safe stop, then leave any relayed location normally. Closing the window mid-session can disconnect you. No Python installation needed. Do not disable antivirus or EAC to run it.
 
-Requires Windows and the PowerShell 5.1 that comes with it. Nothing to install.
+**CONTROLS.cmd:** status, safe stop, helper restart, automatic rearm on/off, emergency stop. **UNINSTALL.cmd:** stop and remove this copy. Your game and shared drivers are kept. No Windows autostart or automatic game restart is installed.
 
-## What it touches
+## What it does
 
-It reads `Player.log`, the plain text log the game writes to `%USERPROFILE%\AppData\LocalLow\Kefir\ROB RUN\`.
+Reads the game's log. On a stalled battle join, creates a temporary local relay, forwards requests unchanged first, then proposes fresh ENet session identifiers and updates their checksum. It does not edit game files or memory, restart the game, or upload anything. Normal server authentication still occurs. It uses a server-IP route, so other traffic to that same IP can be affected. IPv6 and fragmented packets are unsupported.
 
-It does **not**:
+**Logs:** local only, ON by default, capped at **256 KiB**. Choose **N** to disable new logging; remove the logs folder after stopping to erase old logs. No raw game logs, packets, IPs, account IDs or tokens. **EXPORT-LOGS.cmd** creates one text file, at most **128 KiB**. Review it before sharing. Nothing uploads automatically.
 
-- open the game's process or read its memory
-- change any game file
-- send, block or change any network traffic
-- press keys or click for you
+**Think this might be a virus?** Inspect this GitHub source yourself, or ask an AI/security reviewer to inspect it. An AI review or clean scan is **not a safety guarantee**.
 
-It writes one file, `moves.csv`, next to the script. It lists the time, server, IP, port, ping and result of each move, with no account details or tokens. It stays on your PC.
-
-### Optional, experimental: `Start.bat -AutoRestart`
-
-After the first failed connect attempt, this asks the game window to close (the same as clicking X) and starts the game through Steam. You still press Play. It restarts at most 5 times per run, at most once every 2 minutes, and never force-kills the game. This mode has not yet been verified against the real game.
-
-## Review it yourself
-
-All of the logic is in one readable script: [watcher/RobRunHangWatcher.ps1](watcher/RobRunHangWatcher.ps1). `Start.bat` only launches it. It uses `-ExecutionPolicy Bypass` for that one launch because Windows blocks unsigned scripts by default, and it doesn't change your system's settings.
-
-## How it was tested
-
-Replaying 51 real moves from one player's logs (27 good, 24 hangs), it flagged every hang and raised no false alarms. Healthy connects took at most 0.106 s and failed attempts at least 5.09 s, so the 2-second threshold has a wide margin.
-
-## Use at your own risk
-
-No third-party tool can be guaranteed safe to use with a game protected by Easy Anti-Cheat, and Kefir's rules may change. This tool stays outside the game by design, but that is not a promise from Kefir or from Easy Anti-Cheat.
-
-## License
-
-[MIT](LICENSE)
+**AI-assisted:** Developed with AI assistance; may contain mistakes.

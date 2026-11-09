@@ -42,6 +42,7 @@ def changelog_section(version):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--publish', action='store_true', help='actually push and create the release')
+    parser.add_argument('--title', default='', help='short title after the version, e.g. "Live console view"')
     parser.add_argument('--prerelease', action='store_true', help='mark the release as a pre-release instead of Latest')
     opt = parser.parse_args()
 
@@ -110,7 +111,7 @@ def main():
             run('git', 'commit', '-m', f'Pin the source-tree launcher to {tag}')
         run('git', 'push', 'origin', 'main')
         run('gh', 'release', 'create', tag, str(zip_path), '-R', REPO, '--prerelease' if opt.prerelease else '--latest', '--target', 'main',
-            '--title', f'{tag} - {notes.splitlines()[0].lstrip("-* ").split(".")[0][:60]}', '--notes-file', str(notes_file))
+            '--title', f'{tag} - {opt.title}' if opt.title else tag, '--notes-file', str(notes_file))
         info = json.loads(run('gh', 'release', 'view', tag, '-R', REPO, '--json', 'assets'))
         uploaded = info['assets'][0].get('digest', '')
         if uploaded != 'sha256:' + digest:

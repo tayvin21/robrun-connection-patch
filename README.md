@@ -1,6 +1,6 @@
 # ROB RUN Connection Patch
 
-> **DOWNLOAD PAUSED:** Microsoft Defender flagged the published v0.2.0 ZIP as `Trojan:Script/Wacatac.B!ml`. Investigation is ongoing; a false positive has not been confirmed. Do not override antivirus protection. No replacement download is published.
+> **DEFENDER NOTICE:** Microsoft Defender flagged the older v0.2.0 ZIP as `Trojan:Script/Wacatac.B!ml`; that download remains withdrawn. A false positive has not been confirmed. v0.2.1 is a smaller, repackaged experimental build, not a Microsoft-approved fix. A clean scan does not guarantee safety. Do not override antivirus protection.
 
 > **UNOFFICIAL. EXPERIMENTAL. NOT APPROVED BY KEFIR OR EASY ANTI-CHEAT.**
 >
@@ -12,7 +12,7 @@ Attempts to recover stalled server joins without restarting ROB RUN. Limited liv
 
 ## How to run
 
-1. Downloads are paused for security review. When available, use **ROB-RUN-Connection-Patch.zip** from [Releases](https://github.com/tayvin21/robrun-connection-patch/releases). Windows 10/11 **x64** only.
+1. [Download **ROB-RUN-Connection-Patch.zip**](https://github.com/tayvin21/robrun-connection-patch/releases/download/v0.2.1/ROB-RUN-Connection-Patch.zip). Windows 10/11 **x64** only.
 2. Right-click the ZIP, choose **Extract All**, then open the extracted folder. Everything is included; no Python, Tailscale or other installation needed.
 3. Keep ROB RUN open. Double-click **START.cmd**, read the warning, choose **R** (local logs) or **N** (no logs), and approve the administrator prompt. **No game restart required.**
 
@@ -30,6 +30,6 @@ Reads the game's log. On a stalled battle join, creates a temporary local relay,
 
 **Think this might be a virus?** Inspect this GitHub source yourself, or ask an AI/security reviewer to inspect it. An AI review or clean scan is **not a safety guarantee**.
 
-GitHub's source ZIP can prepare the runnable package on first launch (internet required). This is also paused during security review.
+GitHub's source ZIP prepares the runnable package on first launch (internet required), verifying its pinned checksum before opening the launcher.
 
 **AI-assisted:** Developed with AI assistance; may contain mistakes.

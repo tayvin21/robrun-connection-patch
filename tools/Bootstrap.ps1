@@ -2,16 +2,13 @@
 param([ValidateSet('Start','Menu','Status','Stop','Restart','Auto','Force','Uninstall','Export')][string]$Mode = 'Start', [switch]$PrepareOnly)
 $ErrorActionPreference = 'Stop'
 $version = '0.2.1'
-$expectedHash = 'ea3c6b5bf3177ef9075eff3d6ea6916c1350d7cd0baadddfc45b8920cd6e0f61'
+$expectedHash = '394e85f6cc7d2918d92e1c8acf6e3a9b8338f47fdc3f10869b6a00725c6fdcb3'
 $sourceRoot = Split-Path $PSScriptRoot -Parent
 $cache = Join-Path $sourceRoot ('.ready-to-run\' + $version)
 $install = Join-Path $cache 'ROB-RUN-Connection-Patch'
 $launcher = Join-Path $install 'app\Launch.ps1'
 $prepared = Join-Path $cache 'prepared.txt'
 try {
-    if (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'RELEASE-PAUSED.txt')) {
-        throw 'Downloads are paused: Defender flagged the previous release. Do not override antivirus protection. See the repository notice.'
-    }
     if (-not (Test-Path -LiteralPath $launcher) -or -not (Test-Path -LiteralPath $prepared)) {
         if ($Mode -ne 'Start' -and -not $PrepareOnly) { Write-Host 'This source copy has not installed the runnable patch. Nothing is running from it.'; exit 0 }
         Write-Host 'Preparing ROB RUN Connection Patch. Downloading the ready-to-run package from GitHub...'

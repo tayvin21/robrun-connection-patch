@@ -1,5 +1,5 @@
 """Bounded local diagnostics and text export."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 import json
 from pathlib import Path
 import threading
@@ -7,8 +7,13 @@ import threading
 LIMIT = 128 * 1024
 FIELDS = {'phase', 'seconds', 'changed', 'baseline', 'result', 'version'}
 EVENTS = {'armed', 'trial', 'connect', 'reply', 'connected', 'ended', 'cleanup',
-          'error', 'stopping', 'startup', 'idle_stop', 'unsupported', 'route_failed',
+          'error', 'stopping', 'startup', 'route_failed',
           'budget_limit', 'retry_limit', 'game_exit', 'auto_stop'}
+
+
+def safe_text(value):
+    """True for short ASCII identifiers; anything else is never logged or exported."""
+    return isinstance(value, str) and value.isascii() and len(value) <= 48 and all(c.isalnum() or c in '_-.' for c in value)
 
 
 class Diagnostics:
@@ -20,13 +25,11 @@ class Diagnostics:
     def emit(self, event, **fields):
         if not self.enabled or event not in EVENTS:
             return
-        record = {'time': datetime.now(timezone.utc).isoformat(timespec='milliseconds'), 'event': event}
+        record = {'time': datetime.now(UTC).isoformat(timespec='milliseconds'), 'event': event}
         for key, value in fields.items():
             if key not in FIELDS:
                 continue
-            if isinstance(value, (bool, int, float)):
-                record[key] = value
-            elif isinstance(value, str) and value.isascii() and len(value) <= 48 and all(c.isalnum() or c in '_-.' for c in value):
+            if isinstance(value, (bool, int, float)) or safe_text(value):
                 record[key] = value
         raw = (json.dumps(record, separators=(',', ':')) + '\n').encode('utf-8')
         try:
@@ -67,9 +70,7 @@ def export(directory, destination):
                     safe['time'] = stamp
                 for key in FIELDS:
                     value = row.get(key)
-                    if isinstance(value, (int, float, bool)):
-                        safe[key] = value
-                    elif isinstance(value, str) and len(value) <= 48 and value.isascii() and all(c.isalnum() or c in '_-.' for c in value):
+                    if isinstance(value, (bool, int, float)) or safe_text(value):
                         safe[key] = value
                 text = json.dumps(safe, separators=(',', ':')) + '\n'
                 size = len(text.encode('utf-8'))

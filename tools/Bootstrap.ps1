@@ -51,6 +51,6 @@ try {
     exit $LASTEXITCODE
 } catch {
     Write-Host $_.Exception.Message -ForegroundColor Red
-    Write-Host 'Download: https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.2.2'
+    Write-Host ('Download: https://github.com/tayvin21/robrun-connection-patch/releases/tag/v' + $version)
     exit 1
 }

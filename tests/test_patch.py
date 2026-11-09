@@ -86,7 +86,7 @@ class LifecycleTests(unittest.TestCase):
         self.assertFalse(relay.allowed)
 
     def test_failed_route_removal_is_reported(self):
-        relay = transport.Relay(None, '127.0.0.1', 1, 1e9, 1)
+        relay = transport.Relay(None, '127.0.0.1', 1)
         relay.allowed.add('5.8.93.226')
         with mock.object(transport, 'netsh', return_value=(1, 'failure')):
             with self.assertRaises(OSError): relay.remove_route('5.8.93.226')

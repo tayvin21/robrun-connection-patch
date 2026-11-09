@@ -1,5 +1,6 @@
 """Experimental ROB RUN connection helper."""
 import argparse
+import contextlib
 import ctypes
 import ctypes.wintypes as w
 import ipaddress
@@ -70,7 +71,7 @@ class Proposal:
 
 class Relay(transport.Relay):
     def __init__(self, tun, egress, index, report):
-        super().__init__(tun, egress, index, 1e9, 1, port_budget=60)
+        super().__init__(tun, egress, index, port_budget=60)
         self.target = None
         self.trials = {}
         self.error = None
@@ -124,7 +125,7 @@ class Relay(transport.Relay):
 
 class Watcher(transport.Watcher):
     def __init__(self, path, relay, report):
-        super().__init__(path, relay, 2)
+        super().__init__(path, relay)
         self.report = report
         self.ended = False
         self.allow_trials = True
@@ -283,10 +284,8 @@ def run(opt):
 
     def report(event, **fields):
         diag.emit(event, **fields)
-        try:
+        with contextlib.suppress(OSError):
             (ROOT / 'status.json').write_text(json.dumps({'pid': os.getpid(), 'status': event, 'version': VERSION}), encoding='utf-8')
-        except OSError:
-            pass
         labels = {'startup': 'STARTING', 'armed': 'ARMED - waiting for a stalled join',
                   'trial': 'TESTING - forwarding unchanged connection requests',
                   'reply': 'Server replied', 'ended': 'Location ended; route removed',
@@ -349,10 +348,8 @@ def run(opt):
         report('armed')
         print('Press ENTER to stop safely. If connected through the relay, leave the location first.\nLocal diagnostics: ' + ('OFF' if opt.no_logs else 'ON (256 KiB maximum; never uploaded)'), flush=True)
         def request_stop():
-            try:
+            with contextlib.suppress(EOFError):
                 input()
-            except EOFError:
-                pass
             stopping.set()
         threading.Thread(target=request_stop, daemon=True).start()
         watch_session(watcher, relay, guardian, stopping, report)

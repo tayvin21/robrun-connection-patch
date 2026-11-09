@@ -117,21 +117,17 @@ class Flow:
 
 
 class Relay:
-    def __init__(self, tun, egress_ip, interface_index, rotate_seconds, max_ports, port_budget=60, label=None):
+    def __init__(self, tun, egress_ip, interface_index, port_budget=60):
         self.port_budget = port_budget
         self.opened = collections.deque()
         self.budget_warned = False
         self.tun = tun
         self.egress_ip = egress_ip
         self.interface_index = interface_index
-        self.rotate_seconds = rotate_seconds
-        self.max_ports = max_ports
-        self.label = label or (lambda ip: ip)
         self.allowed = set()
         self.flows = {}
         self.lock = threading.Lock()
         self.stop = False
-        self.readers = []
 
     def budget_ok(self):
         now = time.monotonic()
@@ -184,11 +180,8 @@ class Relay:
         self.opened.append(flow.created)
         flow.ports.append(sock.getsockname()[1])
         index = len(flow.ports)
-        log(f'{self.label(flow.server_ip)}:{flow.server_port}: sending from new source port #{index}')
-        reader = threading.Thread(target=self.read_replies, args=(flow, sock, index), daemon=True)
-        self.readers = [thread for thread in self.readers if thread.is_alive()]
-        self.readers.append(reader)
-        reader.start()
+        log(f'{flow.server_ip}:{flow.server_port}: sending from new source port #{index}')
+        threading.Thread(target=self.read_replies, args=(flow, sock, index), daemon=True).start()
 
     def read_replies(self, flow, sock, index):
         sock.settimeout(1.0)
@@ -196,12 +189,12 @@ class Relay:
         while not self.stop:
             try:
                 data, address = sock.recvfrom(65535)
-            except socket.timeout:
+            except TimeoutError:
                 if flow.sock is not sock:
                     return
                 continue
             except ConnectionResetError:
-                log(f'{self.label(flow.server_ip)}:{flow.server_port}: server reports port closed (ICMP) on source port #{index}')
+                log(f'{flow.server_ip}:{flow.server_port}: server reports port closed (ICMP) on source port #{index}')
                 continue
             except OSError:
                 return
@@ -209,7 +202,7 @@ class Relay:
                 continue
             if not flow.replied:
                 flow.replied = True
-                log(f'{self.label(flow.server_ip)}:{flow.server_port}: SERVER ANSWERED on source port #{index}')
+                log(f'{flow.server_ip}:{flow.server_port}: SERVER ANSWERED on source port #{index}')
             self.tun.send(build_udp_packet(socket.inet_aton(flow.server_ip), flow.client_ip, flow.server_port, flow.client_port, data))
 
     def pump(self):
@@ -222,10 +215,9 @@ class Relay:
 
 
 class Watcher:
-    def __init__(self, path, relay, stall_seconds):
+    def __init__(self, path, relay):
         self.path = path
         self.relay = relay
-        self.stall_seconds = stall_seconds
         self.position = os.path.getsize(path) if os.path.exists(path) else 0
         self.partial = b''
         self.move = None
@@ -267,13 +259,7 @@ class Watcher:
                 log(f"REPAIRED: {move.get('server')} connected {time.monotonic() - move['started']:.1f}s after the join began.")
 
     def check_stall(self):
-        move = self.move
-        if not move or 'started' not in move or move.get('handshake') or move.get('routed'):
-            return
-        limit = max(self.stall_seconds, move['rtt'] * 10 / 1000)
-        if time.monotonic() - move['started'] >= limit and self.relay.budget_ok() and self.relay.add_route(move['ip']):
-            move['routed'] = True
-            log(f"{move.get('server')}: no answer after {limit:.1f}s. Rerouting this server through the relay.")
+        """Hook run after every poll; subclasses decide when a join has stalled."""
 
     def poll(self):
         try:
@@ -324,7 +310,7 @@ def configure_adapter():
     query = f"(Get-NetIPAddress -InterfaceAlias '{NAME}' -IPAddress '{TUN_IP}' -ErrorAction SilentlyContinue).AddressState"
     state = ''
     for _ in range(40):
-        state = subprocess.run(['powershell', '-NoProfile', '-Command', query], capture_output=True, text=True, creationflags=CREATE_NO_WINDOW).stdout.strip()
+        state = subprocess.run(['powershell', '-NoProfile', '-Command', query], capture_output=True, text=True, creationflags=CREATE_NO_WINDOW, check=False).stdout.strip()
         if state == 'Preferred':
             return
         time.sleep(0.25)

@@ -10,11 +10,19 @@ Attempts to recover stalled server joins without restarting ROB RUN.
 
 **Security notice:** Defender flagged the withdrawn v0.2.0 ZIP as `Trojan:Script/Wacatac.B!ml`. A false positive has not been confirmed. Do not override antivirus protection; a clean scan is not a safety guarantee.
 
-**Recommended version: [v0.3.0](https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.3.0).** Game build 26535791 (Nov 9, 2026) broke v0.2.4 and older: they no longer recognise a stalled join and do nothing. Use v0.2.5 or newer. See [CHANGELOG.md](CHANGELOG.md) for every version.
+**Recommended version: the [latest release](https://github.com/tayvin21/robrun-connection-patch/releases/latest).** Game build 26535791 (Nov 9, 2026) broke v0.2.4 and older: they no longer recognise a stalled join and do nothing. Use v0.2.5 or newer. See [CHANGELOG.md](CHANGELOG.md) for every version.
+
+## Sharing this
+
+If you feel comfortable doing so, please share this with friends who have the same joining problem, and ask them to read the disclaimers at the top first. If you do share it, please do it respectfully:
+
+- **Don't advertise it.** Share it when someone asks, or complains about the problem, and include the disclaimer: unofficial, could get you banned, use at your own risk.
+- **Respect link restrictions.** Some communities block posts that contain links (https) and will block you for posting one. Don't work around that. Leave the link out, or skip it, and only share it there if someone asks.
+- **Respect the game developers.** This is an unofficial workaround for a connection problem. It is not approved by them, and nothing here is meant to cause them any trouble.
 
 ## How to run
 
-1. [Download the ZIP](https://github.com/tayvin21/robrun-connection-patch/releases/download/v0.3.0/ROB-RUN-Connection-Patch.zip). Requires Windows 10/11 **x64**. All dependencies are included.
+1. [Download the ZIP](https://github.com/tayvin21/robrun-connection-patch/releases/latest/download/ROB-RUN-Connection-Patch.zip). Requires Windows 10/11 **x64**. All dependencies are included.
 2. Right-click the ZIP and select **Extract All**.
 3. With ROB RUN open, run **START.cmd**. Read the warning, choose **R** (logs on) or **N** (logs off), and approve administrator access. **No game restart required.**
 

@@ -10,7 +10,7 @@ Attempts to recover stalled server joins without restarting ROB RUN.
 
 **Security notice:** Defender flagged the withdrawn v0.2.0 ZIP as `Trojan:Script/Wacatac.B!ml`. A false positive has not been confirmed. Do not override antivirus protection; a clean scan is not a safety guarantee.
 
-**Recommended version: [v0.2.5](https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.2.5)**, the current download. **If you use v0.2.4 or older, upgrade: after the game update to build 26535791 (Nov 9, 2026) they no longer recognise a stalled join and do nothing.** v0.2.5 reads the changed game log line. Older releases are kept only so old links work. Affected-user confirmation is still pending.
+**Recommended version: [v0.2.5](https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.2.5)**, the current download. **This is a post-hotfix patch: it exists because the game's Nov 9, 2026 hotfix (build 26535791) broke older versions. If you use v0.2.4 or older, upgrade: after that hotfix to build 26535791 (Nov 9, 2026) they no longer recognise a stalled join and do nothing.** v0.2.5 reads the changed game log line. Older releases are kept only so old links work. Affected-user confirmation is still pending.
 
 ## How to run
 

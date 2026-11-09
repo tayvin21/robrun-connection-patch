@@ -448,7 +448,12 @@ def run_demo(opt):
         print('This window cannot show the animated view; open the web page instead.', flush=True)
     if live is None:
         print('Press ENTER to end the demo.', flush=True)
-        threading.Thread(target=lambda: (input(), stop.set()) if sys.stdin and sys.stdin.isatty() else None, daemon=True).start()
+
+        def wait_for_enter():
+            with contextlib.suppress(EOFError, OSError):
+                input()
+                stop.set()
+        threading.Thread(target=wait_for_enter, daemon=True).start()
     demo.start(tracker, stop, opt.demo_speed)
     try:
         while not stop.is_set():

@@ -7,6 +7,7 @@ Account tokens, peer ids and every other log value are never parsed, stored or s
 import datetime
 import json
 import re
+import socketserver
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -377,11 +378,20 @@ def make_handler(tracker, ui_root):
     return Handler
 
 
+class LoopbackServer(ThreadingHTTPServer):
+    """No hostname lookup on bind: the stripped release runtime has no idna codec, which getfqdn needs."""
+    allow_reuse_address = False
+
+    def server_bind(self):
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
+
+
 def serve(tracker, ui_root, preferred_port=38457):
     """Start the page on loopback; returns (server, url) or None. Never raises: the patch must not depend on it."""
     for port in (preferred_port, 0):
         try:
-            server = ThreadingHTTPServer(('127.0.0.1', port), make_handler(tracker, ui_root))
+            server = LoopbackServer(('127.0.0.1', port), make_handler(tracker, ui_root))
         except OSError:
             continue
         server.daemon_threads = True

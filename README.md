@@ -10,13 +10,11 @@ Attempts to recover stalled server joins without restarting ROB RUN.
 
 **Security notice:** Defender flagged the withdrawn v0.2.0 ZIP as `Trojan:Script/Wacatac.B!ml`. A false positive has not been confirmed. Do not override antivirus protection; a clean scan is not a safety guarantee.
 
-**Recommended version: [v0.2.3](https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.2.3)** (the current download, and the one prototype testing recovered stalled joins with). Older releases are kept only so old links still work. Real long-session and affected-user confirmation is still pending.
-
-**Source note:** `main` has one commit after v0.2.3, a simple AI-assisted cleanup (dead code removed, one stale link fixed, lint tidied) with no intended behavior change. It is not released; the v0.2.3 ZIP above is unaffected.
+**Recommended version: [v0.2.4](https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.2.4)**, the current download. It is v0.2.3 plus a simple AI-assisted cleanup (dead code removed, a stale link fixed, lint tidied) with no intended behavior change. v0.2.3 is the version prototype testing recovered stalled joins with, and stays available if you want it; older releases are kept only so old links work. Real long-session and affected-user confirmation of any version is still pending.
 
 ## How to run
 
-1. [Download the ZIP](https://github.com/tayvin21/robrun-connection-patch/releases/download/v0.2.3/ROB-RUN-Connection-Patch.zip). Requires Windows 10/11 **x64**. All dependencies are included.
+1. [Download the ZIP](https://github.com/tayvin21/robrun-connection-patch/releases/download/v0.2.4/ROB-RUN-Connection-Patch.zip). Requires Windows 10/11 **x64**. All dependencies are included.
 2. Right-click the ZIP and select **Extract All**.
 3. With ROB RUN open, run **START.cmd**. Read the warning, choose **R** (logs on) or **N** (logs off), and approve administrator access. **No game restart required.**
 
@@ -24,7 +22,7 @@ By choosing R or N, you acknowledge this is unofficial, could get you banned, an
 
 The window shows **ARMED / TESTING / CONNECTED**. Press **Enter**, or choose **S** in START, to request a safe stop; leave the relayed location normally. Closing the window mid-session can disconnect you.
 
-**v0.2.3:** removes the one-hour idle shutdown. The helper stays armed while the game is running unless you stop it or disable automatic rearming. Retry limits now show a warning. **PATCH IS STOPPED** means an open window is no longer helping. For upgrades, safely stop the old copy before running the new ZIP from a separate folder.
+**v0.2.4:** cleanup only, no intended behavior change. **v0.2.3:** removes the one-hour idle shutdown. The helper stays armed while the game is running unless you stop it or disable automatic rearming. Retry limits now show a warning. **PATCH IS STOPPED** means an open window is no longer helping. For upgrades, safely stop the old copy before running the new ZIP from a separate folder.
 
 Choose **O** in START for status, helper restart, automatic rearming, emergency stop and log export. **UNINSTALL.cmd** removes the patch; it keeps your game and shared drivers. Technical files are in **app/**. No Windows autostart or automatic game restart is installed.
 

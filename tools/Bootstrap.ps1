@@ -1,8 +1,8 @@
 [CmdletBinding()]
 param([ValidateSet('Start','Menu','Status','Stop','Restart','Auto','Force','Uninstall','Export')][string]$Mode = 'Start', [switch]$PrepareOnly)
 $ErrorActionPreference = 'Stop'
-$version = '0.2.3'
-$expectedHash = 'cdda734ef69a2f1e10534213233b47f1b4e8acbf89a24eb6757cc1cbc45c16de'
+$version = '0.2.4'
+$expectedHash = 'f31bff7a864a0bef7296bb14561e559334e516327e6e6cf6b55dee847c1ba81e'
 $sourceRoot = Split-Path $PSScriptRoot -Parent
 $cache = Join-Path $sourceRoot ('.ready-to-run\' + $version)
 $install = Join-Path $cache 'ROB-RUN-Connection-Patch'

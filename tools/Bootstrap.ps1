@@ -1,8 +1,8 @@
 [CmdletBinding()]
 param([ValidateSet('Start','Menu','Status','Stop','Restart','Auto','Force','Uninstall','Export')][string]$Mode = 'Start', [switch]$PrepareOnly)
 $ErrorActionPreference = 'Stop'
-$version = '0.2.1'
-$expectedHash = '394e85f6cc7d2918d92e1c8acf6e3a9b8338f47fdc3f10869b6a00725c6fdcb3'
+$version = '0.2.2'
+$expectedHash = '3bd0657060379db2d8812c5be034987d45a20bafcf41785f33b5b2accf303cb4'
 $sourceRoot = Split-Path $PSScriptRoot -Parent
 $cache = Join-Path $sourceRoot ('.ready-to-run\' + $version)
 $install = Join-Path $cache 'ROB-RUN-Connection-Patch'
@@ -10,9 +10,9 @@ $launcher = Join-Path $install 'app\Launch.ps1'
 $prepared = Join-Path $cache 'prepared.txt'
 try {
     if (-not (Test-Path -LiteralPath $launcher) -or -not (Test-Path -LiteralPath $prepared)) {
-        if ($Mode -ne 'Start' -and -not $PrepareOnly) { Write-Host 'This source copy has not installed the runnable patch. Nothing is running from it.'; exit 0 }
+        if ($Mode -ne 'Start' -and -not $PrepareOnly) { Write-Host 'No prepared package found. Run START.cmd first.'; exit 0 }
         Write-Host 'Preparing ROB RUN Connection Patch. Downloading the ready-to-run package from GitHub...'
-        Write-Host 'No Python or Tailscale installation needed. This happens only on first launch.'
+        Write-Host 'Dependencies are included. Preparation is required only on first launch.'
         [void][IO.Directory]::CreateDirectory($cache)
         $archive = Join-Path $cache 'package.zip'
         if (-not (Test-Path -LiteralPath $archive)) {
@@ -51,6 +51,6 @@ try {
     exit $LASTEXITCODE
 } catch {
     Write-Host $_.Exception.Message -ForegroundColor Red
-    Write-Host 'Direct download: https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.2.1'
+    Write-Host 'Download: https://github.com/tayvin21/robrun-connection-patch/releases/tag/v0.2.2'
     exit 1
 }

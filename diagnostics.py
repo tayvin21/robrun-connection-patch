@@ -1,4 +1,4 @@
-"""Small local records. Never saves raw game logs, packets, IDs or credentials."""
+"""Bounded local diagnostics and text export."""
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -42,7 +42,7 @@ class Diagnostics:
 
 
 def export(directory, destination):
-    """Allowlisted records only; bounded reads and output, no archive handling."""
+    """Export allowlisted fields with bounded input and output."""
     clean = []
     remaining = LIMIT
     for name in ('diagnostics.jsonl', 'diagnostics.previous.jsonl'):

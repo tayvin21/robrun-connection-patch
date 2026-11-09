@@ -1,4 +1,4 @@
-"""Reproducible file selection; downloads only pinned official vendor archives."""
+"""Build the Windows package from pinned dependencies."""
 import hashlib
 from pathlib import Path
 import shutil

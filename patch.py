@@ -1,4 +1,4 @@
-"""Unofficial, experimental ROB RUN connection workaround. Account safety unknown."""
+"""Experimental ROB RUN connection helper."""
 import argparse
 import ctypes
 import ctypes.wintypes as w
@@ -18,7 +18,7 @@ sys.dont_write_bytecode = True
 import diagnostics
 import transport
 
-VERSION = '0.2.1'
+VERSION = '0.2.2'
 ROOT = Path(__file__).resolve().parent
 WARNING = '''UNOFFICIAL EXPERIMENTAL PATCH - NOT APPROVED BY KEFIR OR EASY ANTI-CHEAT.
 THIS COULD GET YOU BANNED. ACCOUNT SAFETY IS UNKNOWN. USE AT YOUR OWN RISK.
@@ -176,7 +176,7 @@ def auto_rearm_enabled():
 
 
 def guard(parent):
-    """Waits for this helper only, then removes leftover routes for its fixed adapter."""
+    """Remove the helper's remaining routes after its process exits."""
     kernel = ctypes.WinDLL('kernel32', use_last_error=True)
     kernel.OpenProcess.argtypes = [w.DWORD, w.BOOL, w.DWORD]
     kernel.OpenProcess.restype = w.HANDLE
@@ -285,7 +285,7 @@ def run(opt):
         pump = threading.Thread(target=relay.pump, daemon=True)
         pump.start()
         watcher = Watcher(transport.DEFAULT_LOG, relay, report)
-        # Attach only the current assignment; never persist the game log.
+        # Ignore completed assignments when attaching to an existing game log.
         with open(transport.DEFAULT_LOG, 'rb') as stream:
             stream.seek(max(0, watcher.position - 2_000_000))
             lines = stream.read(watcher.position - stream.tell()).decode('latin-1').splitlines()

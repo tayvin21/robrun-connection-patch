@@ -25,8 +25,8 @@ try {
         Write-Host 'No safety, reliability or anti-cheat compatibility is promised.'
         Write-Host 'You choose to use this at your own risk. Non-excludable legal rights remain.'
         Write-Host ''
-        Write-Host 'R = accept risk and run (small local diagnostic logs ON)'
-        Write-Host 'N = accept risk and run without logs'
+        Write-Host 'R = accept risk and run with local logs'
+        Write-Host 'N = accept risk and run without local logs'
         Write-Host 'S = safe stop    O = options / export logs    U = uninstall'
         Write-Host 'Anything else = cancel'
         $answer = Read-Host 'Choose'
@@ -54,7 +54,6 @@ try {
     if (-not $isAdmin) {
         $arguments = @('-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $PSCommandPath + '"'),'-Elevated')
         if ($NoLogs) { $arguments += '-NoLogs' }
-        # Visible: this is the status window the user explicitly launches.
         $child = Start-Process powershell.exe -Verb RunAs -WindowStyle Normal -ArgumentList $arguments -Wait -PassThru
         exit $child.ExitCode
     }

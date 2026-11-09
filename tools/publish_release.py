@@ -2,6 +2,7 @@
 
     python tools/publish_release.py             dry run: tests, clean build, Defender scan, shows what it would publish
     python tools/publish_release.py --publish   also pins Bootstrap.ps1, pushes main and creates the GitHub release
+    add --prerelease to publish as a pre-release; the default is a normal release that GitHub marks "Latest"
 
 Needs git, the GitHub CLI (`gh`, logged in) and Windows Defender. The version comes from the VERSION file; the
 release notes come from the matching section of CHANGELOG.md. Nothing is published without --publish.
@@ -41,6 +42,7 @@ def changelog_section(version):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--publish', action='store_true', help='actually push and create the release')
+    parser.add_argument('--prerelease', action='store_true', help='mark the release as a pre-release instead of Latest')
     opt = parser.parse_args()
 
     version = (ROOT / 'VERSION').read_text(encoding='ascii').strip()
@@ -107,7 +109,7 @@ def main():
             run('git', 'add', 'tools/Bootstrap.ps1')
             run('git', 'commit', '-m', f'Pin the source-tree launcher to {tag}')
         run('git', 'push', 'origin', 'main')
-        run('gh', 'release', 'create', tag, str(zip_path), '-R', REPO, '--prerelease', '--target', 'main',
+        run('gh', 'release', 'create', tag, str(zip_path), '-R', REPO, '--prerelease' if opt.prerelease else '--latest', '--target', 'main',
             '--title', f'{tag} - {notes.splitlines()[0].lstrip("-* ").split(".")[0][:60]}', '--notes-file', str(notes_file))
         info = json.loads(run('gh', 'release', 'view', tag, '-R', REPO, '--json', 'assets'))
         uploaded = info['assets'][0].get('digest', '')

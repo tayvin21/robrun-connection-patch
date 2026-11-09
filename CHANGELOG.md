@@ -1,8 +1,8 @@
 # Changelog
 
 Versions follow `MAJOR.MINOR.PATCH`. The number lives in one file, `VERSION`; a release is the git tag `vX.Y.Z` with
-`ROB-RUN-Connection-Patch.zip` attached and its SHA-256 published in the release notes. Every release so far is an
-experimental pre-release. The updater only installs a release that publishes a SHA-256 and whose download matches it.
+`ROB-RUN-Connection-Patch.zip` attached and its SHA-256 published in the release notes. The patch is experimental
+whatever the release flag says; v0.3.0 and later are published as the GitHub "Latest" release. The updater only installs a release that publishes a SHA-256 and whose download matches it.
 
 ## v0.3.0
 

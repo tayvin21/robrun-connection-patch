@@ -22,6 +22,8 @@ By choosing R or N, you acknowledge this is unofficial, could get you banned, an
 
 The window shows **ARMED / TESTING / CONNECTED**. Press **Enter**, or choose **S** in START, to request a safe stop; leave the relayed location normally. Closing the window mid-session can disconnect you.
 
+**v0.2.5 (unreleased):** game build 26535791 added `isProxyPreferred=...` to the battle address log line, so earlier versions never recognised the battle server and never started a repair. This version reads the new line. Untested on a live join so far.
+
 **v0.2.4:** cleanup only, no intended behavior change. **v0.2.3:** removes the one-hour idle shutdown. The helper stays armed while the game is running unless you stop it or disable automatic rearming. Retry limits now show a warning. **PATCH IS STOPPED** means an open window is no longer helping. For upgrades, safely stop the old copy before running the new ZIP from a separate folder.
 
 Choose **O** in START for status, helper restart, automatic rearming, emergency stop and log export. **UNINSTALL.cmd** removes the patch; it keeps your game and shared drivers. Technical files are in **app/**. No Windows autostart or automatic game restart is installed.

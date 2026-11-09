@@ -241,7 +241,7 @@ class Watcher:
         move = self.move
         if move is None:
             return
-        found = re.search(r'GetAddress completed id=battle host=\S*?(battle-gcore-\d+)\S* dnsAddresses=\d+ addresses=([\d.]+)', line)
+        found = re.search(r'GetAddress completed id=battle host=\S*?(battle-gcore-\d+)\S* dnsAddresses=\d+(?: \w+=\S+)*? addresses=([\d.]+)', line)
         if found:
             move.setdefault('server', found.group(1))
             return

@@ -63,6 +63,12 @@ class LifecycleTests(unittest.TestCase):
         watcher.read_line(f'PeerConnect started id=battle address={ip}:36706 rtt=70 attempts=0')
         watcher.move['started'] -= 3
 
+    def test_build_26535791_address_line_still_names_the_server(self):
+        watcher = patch.Watcher('does-not-exist', FakeRelay(), lambda *a, **k: None)
+        watcher.read_line('NetworkStep - Changed on "InBattle".')
+        watcher.read_line('ConnectUpdater.GetAddress completed id=battle host=prod-game-us-0-battle-gcore-17.rob-run.kefir.games. dnsAddresses=1 isProxyPreferred=False addresses=162.216.231.29')
+        self.assertEqual(watcher.move.get('server'), 'battle-gcore-17')
+
     def test_route_lasts_until_departure_and_rearms_cleanly(self):
         relay = FakeRelay()
         watcher = patch.Watcher('does-not-exist', relay, lambda *a, **k: None)

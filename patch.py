@@ -19,7 +19,7 @@ sys.dont_write_bytecode = True
 import diagnostics
 import transport
 
-VERSION = '0.2.4'
+VERSION = '0.2.5'
 ROOT = Path(__file__).resolve().parent
 WARNING = '''UNOFFICIAL EXPERIMENTAL PATCH - NOT APPROVED BY KEFIR OR EASY ANTI-CHEAT.
 THIS COULD GET YOU BANNED. ACCOUNT SAFETY IS UNKNOWN. USE AT YOUR OWN RISK.

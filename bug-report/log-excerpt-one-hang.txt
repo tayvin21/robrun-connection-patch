@@ -1,0 +1,138 @@
+ROB RUN Player.log excerpt: one switch that hung on '...waiting for status information' (build 26509119).
+Log times are the PC's local time (CST = UTC-6): 15:24:07 here = 21:24:07 UTC. Tokens, player id and server addresses removed.
+Stack traces kept for the first reconnect so you can see ConnectUpdater:Update() starting Connect() again.
+
+15:23:06.048 [Network] RoomConnection.DisconnectedNetworkPeerPacket battle | Reason = 400 | disconnectDeferred != null = False
+15:23:06.115 [Network] NetworkStep - Changed on "InRealmNotInBattle".
+15:23:06.115 [Loading] LoadingScreenUpdater StartLoading. Current = RealmLoadScreen.
+15:23:06.125 [Loading] LoadingScreenUpdater Start UnloadContent. Count = 369.
+15:23:06.363 [Loading] LoadingScreenUpdater Finish UnloadContent. Count = 0.
+15:23:06.364 [Loading] LoadingScreenUpdater Start LoadContent. Screen = RealmLoadScreen.
+15:23:06.576 [Loading] LoadingScreenUpdater Finish LoadContent. Count = 24.
+15:23:06.651 [Loading] LoadingScreenUpdater Loaded. Current = RealmLoadScreen.
+15:23:06.656 [Loading] LoadingScreenUpdater CreateUpdater = RealmLoadScreen.
+15:23:06.717 [Loading] LoadingScreenUpdater Done. Current = RealmLoadScreen.
+15:23:07.365 [Network] ProxyConfigProvider Provide completed. Hosts = 147.
+15:24:07.544 [Network] NetworkStep - Changed on "InBattle".
+15:24:07.544 [Loading] LoadingScreenUpdater StartLoading. Current = BattleLoadScreen(253831242502532058872163104651132552125491).
+15:24:07.547 [Loading] LoadingScreenUpdater Start UnloadContent. Count = 24.
+15:24:07.574 [Network] ConnectUpdater.Connect started id=battle isHostExist=True isNetworkHostStarted=True isAuthorized=False needConnectSpecial=True
+15:24:07.574 [Network] ConnectUpdater.GetAddress started id=battle host=battle-gcore-53
+15:24:07.638 [Loading] LoadingScreenUpdater Finish UnloadContent. Count = 0.
+15:24:07.638 [Loading] LoadingScreenUpdater Start LoadContent. Screen = BattleLoadScreen(253831242502532058872163104651132552125491).
+15:24:07.768 [Network] ConnectUpdater.GetAddress completed id=battle host=battle-gcore-53 dnsAddresses=1 addresses=[server-address]
+15:24:07.768 [Network] ConnectUpdater.GetPing started id=battle address=[server-address] isProxyAddress=False
+15:24:07.836 [Network] ConnectUpdater.GetPing completed id=battle address=[server-address] ping=65
+15:24:07.836 [Network] ConnectUpdater.PeerConnect started id=battle address=[server-address] rtt=65 attempts=0
+15:24:09.956 [Loading] LoadingScreenUpdater Finish LoadContent. Count = 376.
+15:24:10.057 [Loading] LoadingScreenUpdater Loaded. Current = BattleLoadScreen(253831242502532058872163104651132552125491).
+15:24:16.095 [Network] ConnectUpdater.PeerConnect attempt failed id=battle address=[server-address] error=0
+15:24:16.095 [Network] ConnectUpdater.PeerConnect failed id=battle address=[server-address] | destination = [server-address] | rtt = 65 | errors = 0 | fingerprints = connection-connect, battle
+15:24:16.096 [Network] ConnectUpdater.Connect failed id=battle reason=connect_failed
+15:24:16.097 [Network] ConnectUpdater.Connect started id=battle isHostExist=True isNetworkHostStarted=True isAuthorized=False needConnectSpecial=True
+        UnityEngine.DebugLogHandler:Internal_Log(LogType, LogOption, String, Object)
+        Utils.CustomLoggers.CustomLogHandler:LogFormat(LogType, Object, String, Object[])
+        UnityEngine.Logger:Log(LogType, Object)
+        Utils.CustomLoggers.Logger:WriteUnityLog(LogType, String, LogEnrichment)
+        Utils.CustomLoggers.Logger:Log(String, ValueTuple`2[])
+        Network.<Connect>d__15:MoveNext()
+        System.Runtime.CompilerServices.AsyncVoidMethodBuilder:Start(TStateMachine&)
+        Network.ConnectUpdater:Update()
+        Core.Updater.CompositeUpdaterExtension:Update(IUpdater[])
+        Core.Updater.CompositeUpdaterExtension:Update(List`1)
+15:24:16.097 [Network] ConnectUpdater.GetAddress started id=battle host=battle-gcore-53
+15:24:16.146 [Network] ConnectUpdater.GetAddress completed id=battle host=battle-gcore-53 dnsAddresses=1 addresses=[server-address]
+15:24:16.146 [Network] ConnectUpdater.GetPing started id=battle address=[server-address] isProxyAddress=False
+15:24:16.206 [Network] ConnectUpdater.GetPing completed id=battle address=[server-address] ping=54
+15:24:16.206 [Network] ConnectUpdater.PeerConnect started id=battle address=[server-address] rtt=54 attempts=0
+        UnityEngine.DebugLogHandler:Internal_Log(LogType, LogOption, String, Object)
+        Utils.CustomLoggers.CustomLogHandler:LogFormat(LogType, Object, String, Object[])
+        UnityEngine.Logger:Log(LogType, Object)
+        Utils.CustomLoggers.Logger:WriteUnityLog(LogType, String, LogEnrichment)
+        Utils.CustomLoggers.Logger:Log(String, ValueTuple`2[])
+        Network.<<ConnectInternal>b__0>d:MoveNext()
+        Network.<>c__DisplayClass19_0:<ConnectInternal>b__0()
+        Network.<AttemptWhile>d__21`2:MoveNext()
+        Network.ConnectUpdater:AttemptWhile(Func`1, Func`2, TimeSpan)
+        Network.<ConnectInternal>d__19:MoveNext()
+        Framework.Async.Awaiter.Awaiter`1:Complete(T)
+        Framework.UnityHttp.Ping.<GetPing>d__4:MoveNext()
+        UnityEngine.Vector4:op_Implicit(Vector2)
+        UnityEngine.DoubleBufferedAwaitableList:SwapAndComplete()
+15:24:23.071 [Network] ConnectUpdater.PeerConnect attempt failed id=battle address=[server-address] error=0
+15:24:23.072 [Network] ConnectUpdater.PeerConnect failed id=battle address=[server-address] | destination = [server-address] | rtt = 54 | errors = 0 | fingerprints = connection-connect, battle
+15:24:23.072 [Network] ConnectUpdater.Connect failed id=battle reason=connect_failed
+15:24:23.072 [Network] ConnectUpdater.Connect started id=battle isHostExist=True isNetworkHostStarted=True isAuthorized=False needConnectSpecial=True
+15:24:23.072 [Network] ConnectUpdater.GetAddress started id=battle host=battle-gcore-53
+15:24:23.131 [Network] ConnectUpdater.GetAddress completed id=battle host=battle-gcore-53 dnsAddresses=1 addresses=[server-address]
+15:24:23.131 [Network] ConnectUpdater.GetPing started id=battle address=[server-address] isProxyAddress=False
+15:24:23.191 [Network] ConnectUpdater.GetPing completed id=battle address=[server-address] ping=56
+15:24:23.191 [Network] ConnectUpdater.PeerConnect started id=battle address=[server-address] rtt=56 attempts=0
+15:24:30.308 [Network] ConnectUpdater.PeerConnect attempt failed id=battle address=[server-address] error=0
+15:24:30.310 [Network] ConnectUpdater.PeerConnect failed id=battle address=[server-address] | destination = [server-address] | rtt = 56 | errors = 0 | fingerprints = connection-connect, battle
+15:24:30.310 [Network] ConnectUpdater.Connect failed id=battle reason=connect_failed
+15:24:30.311 [Network] ConnectUpdater.Connect started id=battle isHostExist=True isNetworkHostStarted=True isAuthorized=False needConnectSpecial=True
+15:24:30.311 [Network] ConnectUpdater.GetAddress started id=battle host=battle-gcore-53
+15:24:30.386 [Network] ConnectUpdater.GetAddress completed id=battle host=battle-gcore-53 dnsAddresses=1 addresses=[server-address]
+15:24:30.386 [Network] ConnectUpdater.GetPing started id=battle address=[server-address] isProxyAddress=False
+15:24:30.455 [Network] ConnectUpdater.GetPing completed id=battle address=[server-address] ping=67
+15:24:30.456 [Network] ConnectUpdater.PeerConnect started id=battle address=[server-address] rtt=67 attempts=0
+15:24:38.972 [Network] ConnectUpdater.PeerConnect attempt failed id=battle address=[server-address] error=0
+15:24:38.972 [Network] ConnectUpdater.PeerConnect failed id=battle address=[server-address] | destination = [server-address] | rtt = 67 | errors = 0 | fingerprints = connection-connect, battle
+15:24:38.973 [Network] ConnectUpdater.Connect failed id=battle reason=connect_failed
+15:24:38.973 [Network] ConnectUpdater.Connect started id=battle isHostExist=True isNetworkHostStarted=True isAuthorized=False needConnectSpecial=True
+15:24:38.973 [Network] ConnectUpdater.GetAddress started id=battle host=battle-gcore-53
+15:24:39.012 [Network] ConnectUpdater.GetAddress completed id=battle host=battle-gcore-53 dnsAddresses=1 addresses=[server-address]
+15:24:39.012 [Network] ConnectUpdater.GetPing started id=battle address=[server-address] isProxyAddress=False
+15:24:39.060 [Network] ConnectUpdater.GetPing completed id=battle address=[server-address] ping=45
+15:24:39.061 [Network] ConnectUpdater.PeerConnect started id=battle address=[server-address] rtt=45 attempts=0
+15:24:44.780 [Network] ConnectUpdater.PeerConnect attempt failed id=battle address=[server-address] error=0
+15:24:44.781 [Network] ConnectUpdater.PeerConnect failed id=battle address=[server-address] | destination = [server-address] | rtt = 45 | errors = 0 | fingerprints = connection-connect, battle
+15:24:44.782 [Network] ConnectUpdater.Connect failed id=battle reason=connect_failed
+15:24:44.782 [Network] ConnectUpdater.Connect started id=battle isHostExist=True isNetworkHostStarted=True isAuthorized=False needConnectSpecial=True
+15:24:44.782 [Network] ConnectUpdater.GetAddress started id=battle host=battle-gcore-53
+15:24:44.839 [Network] ConnectUpdater.GetAddress completed id=battle host=battle-gcore-53 dnsAddresses=1 addresses=[server-address]
+15:24:44.840 [Network] ConnectUpdater.GetPing started id=battle address=[server-address] isProxyAddress=False
+15:24:44.893 [Network] ConnectUpdater.GetPing completed id=battle address=[server-address] ping=47
+15:24:44.894 [Network] ConnectUpdater.PeerConnect started id=battle address=[server-address] rtt=47 attempts=0
+15:24:50.874 [Network] ConnectUpdater.PeerConnect attempt failed id=battle address=[server-address] error=0
+15:24:50.874 [Network] ConnectUpdater.PeerConnect failed id=battle address=[server-address] | destination = [server-address] | rtt = 47 | errors = 0 | fingerprints = connection-connect, battle
+15:24:50.874 [Network] ConnectUpdater.Connect failed id=battle reason=connect_failed
+15:24:50.875 [Network] ConnectUpdater.Connect started id=battle isHostExist=True isNetworkHostStarted=True isAuthorized=False needConnectSpecial=True
+15:24:50.875 [Network] ConnectUpdater.GetAddress started id=battle host=battle-gcore-53
+15:24:50.924 [Network] ConnectUpdater.GetAddress completed id=battle host=battle-gcore-53 dnsAddresses=1 addresses=[server-address]
+15:24:50.924 [Network] ConnectUpdater.GetPing started id=battle address=[server-address] isProxyAddress=False
+15:24:50.992 [Network] ConnectUpdater.GetPing completed id=battle address=[server-address] ping=63
+15:24:50.993 [Network] ConnectUpdater.PeerConnect started id=battle address=[server-address] rtt=63 attempts=0
+15:24:59.002 [Network] ConnectUpdater.PeerConnect attempt failed id=battle address=[server-address] error=0
+15:24:59.002 [Network] ConnectUpdater.PeerConnect failed id=battle address=[server-address] | destination = [server-address] | rtt = 63 | errors = 0 | fingerprints = connection-connect, battle
+15:24:59.002 [Network] ConnectUpdater.Connect failed id=battle reason=connect_failed
+15:24:59.003 [Network] ConnectUpdater.Connect started id=battle isHostExist=True isNetworkHostStarted=True isAuthorized=False needConnectSpecial=True
+15:24:59.003 [Network] ConnectUpdater.GetAddress started id=battle host=battle-gcore-53
+15:24:59.050 [Network] ConnectUpdater.GetAddress completed id=battle host=battle-gcore-53 dnsAddresses=1 addresses=[server-address]
+15:24:59.050 [Network] ConnectUpdater.GetPing started id=battle address=[server-address] isProxyAddress=False
+15:24:59.115 [Network] ConnectUpdater.GetPing completed id=battle address=[server-address] ping=57
+15:24:59.116 [Network] ConnectUpdater.PeerConnect started id=battle address=[server-address] rtt=57 attempts=0
+15:25:06.362 [Network] ConnectUpdater.PeerConnect attempt failed id=battle address=[server-address] error=0
+15:25:06.363 [Network] ConnectUpdater.PeerConnect failed id=battle address=[server-address] | destination = [server-address] | rtt = 57 | errors = 0 | fingerprints = connection-connect, battle
+15:25:06.363 [Network] ConnectUpdater.Connect failed id=battle reason=connect_failed
+15:25:06.363 [Network] ConnectUpdater.Connect started id=battle isHostExist=True isNetworkHostStarted=True isAuthorized=False needConnectSpecial=True
+15:25:06.364 [Network] ConnectUpdater.GetAddress started id=battle host=battle-gcore-53
+15:25:06.405 [Network] ConnectUpdater.GetAddress completed id=battle host=battle-gcore-53 dnsAddresses=1 addresses=[server-address]
+15:25:06.405 [Network] ConnectUpdater.GetPing started id=battle address=[server-address] isProxyAddress=False
+15:25:06.466 [Network] ConnectUpdater.GetPing completed id=battle address=[server-address] ping=56
+15:25:06.466 [Network] ConnectUpdater.PeerConnect started id=battle address=[server-address] rtt=56 attempts=0
+15:25:07.520 [Network] NetworkStep - Changed on "InRealmNotInBattle".
+15:25:07.520 [Loading] LoadingScreenUpdater WaitReady Interrupted. Current = BattleLoadScreen(253831242502532058872163104651132552125491), Required = RealmLoadScreen.
+15:25:07.525 [Loading] LoadingScreenUpdater StartLoading. Current = RealmLoadScreen.
+15:25:07.527 [Loading] LoadingScreenUpdater Start UnloadContent. Count = 376.
+15:25:08.200 [Loading] LoadingScreenUpdater Finish UnloadContent. Count = 0.
+15:25:08.201 [Loading] LoadingScreenUpdater Start LoadContent. Screen = RealmLoadScreen.
+15:25:08.406 [Loading] LoadingScreenUpdater Finish LoadContent. Count = 24.
+15:25:08.486 [Loading] LoadingScreenUpdater Loaded. Current = RealmLoadScreen.
+15:25:08.488 [Loading] LoadingScreenUpdater CreateUpdater = RealmLoadScreen.
+15:25:08.540 [Loading] LoadingScreenUpdater Done. Current = RealmLoadScreen.
+15:25:08.690 [Network] ProxyConfigProvider Provide completed. Hosts = 147.
+15:25:13.587 [Network] ConnectUpdater.PeerConnect attempt failed id=battle address=[server-address] error=0
+15:25:13.587 [Network] ConnectUpdater.PeerConnect failed id=battle address=[server-address] | destination = [server-address] | rtt = 56 | errors = 0 | fingerprints = connection-connect, battle
+15:25:13.587 [Network] ConnectUpdater.Connect failed id=battle reason=connect_failed

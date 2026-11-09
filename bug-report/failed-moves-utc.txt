@@ -1,0 +1,58 @@
+ROB RUN battle server moves, 2026-11-08, US region, build 26509119. One player, 4 play sessions. Times are UTC.
+Server addresses are deliberately left out.
+
+Session 1
+  21:06:27  battle-gcore-16    connected
+  21:15:28  battle-gcore-3     connected
+  21:18:49  battle-gcore-36    FAILED
+  21:19:55  battle-gcore-27    connected
+  21:20:14  battle-gcore-36    FAILED
+
+Session 2
+  21:21:03  battle-gcore-36    connected
+  21:24:07  battle-gcore-53    FAILED
+  21:26:09  battle-gcore-24    connected
+  21:43:43  battle-gcore-1     connected
+  21:53:29  battle-gcore-23    connected
+  21:54:01  battle-gcore-69    FAILED     hub trip
+  21:55:05  battle-gcore-28    connected
+  22:00:01  battle-gcore-32    FAILED     hub trip
+  22:01:04  battle-gcore-25    connected
+  22:02:00  battle-gcore-26    connected
+  22:06:17  battle-gcore-69    FAILED     hub trip
+  22:07:25  battle-gcore-38    FAILED
+  22:09:07  battle-gcore-41    connected
+  22:12:55  battle-gcore-69    FAILED
+  22:14:29  battle-gcore-0     connected
+  22:16:01  battle-gcore-38    FAILED     hub trip
+  22:17:56  battle-gcore-0     connected
+  22:20:35  battle-gcore-39    FAILED     hub trip
+  22:24:11  battle-gcore-5     connected
+  22:32:43  battle-gcore-62    FAILED
+  22:33:48  battle-gcore-40    FAILED
+  22:34:52  battle-gcore-63    FAILED
+  22:36:31  battle-gcore-64    FAILED
+
+Session 3
+  22:40:07  battle-gcore-12    connected
+  22:45:38  battle-gcore-63    FAILED
+  22:46:50  battle-gcore-52    FAILED
+  22:50:15  battle-gcore-39    FAILED
+  22:51:31  battle-gcore-64    FAILED
+  22:52:36  battle-gcore-69    FAILED
+  22:53:59  battle-gcore-5     connected
+  22:56:10  battle-gcore-13    connected
+  23:03:51  battle-gcore-9     FAILED     hub trip
+  23:05:56  battle-gcore-25    connected
+  23:15:20  battle-gcore-51    FAILED
+  23:16:59  battle-gcore-28    connected
+  23:23:29  battle-gcore-0     connected
+  23:33:49  battle-gcore-0     connected
+  23:40:20  battle-gcore-0     connected
+  23:46:39  battle-gcore-55    FAILED
+  23:48:04  battle-gcore-35    FAILED
+
+Session 4
+  23:51:08  battle-gcore-5     connected
+  23:53:20  battle-gcore-0     connected
+  23:56:22  battle-gcore-63    connected

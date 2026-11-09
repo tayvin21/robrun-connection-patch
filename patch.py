@@ -77,6 +77,7 @@ class Relay(transport.Relay):
     def __init__(self, tun, egress, index, report):
         super().__init__(tun, egress, index, port_budget=60)
         self.target = None
+        self.also = set()  # the join's other server addresses (user report #2): same repair, same port
         self.trials = {}
         self.error = None
         self.report = report
@@ -104,7 +105,7 @@ class Relay(transport.Relay):
                 self.flows[key] = flow
                 self.open_socket(flow)
             sock = flow.sock
-            if (ip, sp) == self.target:
+            if (ip, sp) == self.target or (ip, sp) in self.also:
                 state = self.trials.setdefault(key, Proposal(time.monotonic()))
                 payload, phase = state.process(payload, time.monotonic(), flow.replied)
                 if phase == 'limit_reached':
@@ -148,6 +149,14 @@ class Watcher(transport.Watcher):
         self.relay.target = (move['ip'], port)
         if self.relay.add_route(move['ip']):
             move['routed'] = True
+            move['routed_ips'] = [move['ip']]
+            # User report (GitHub issue #1, bug 2): with a proxy-preferred join the game alternates between two
+            # addresses, so route the other public ones too, or half the attempts bypass the repair.
+            # Best effort: only public addresses, and the main route above is what decides success.
+            for other in move.get('addresses', []):
+                if other != move['ip'] and ipaddress.ip_address(other).is_global and self.relay.add_route(other):
+                    move['routed_ips'].append(other)
+                    self.relay.also.add((other, port))
             self.report('trial')
         else:
             self.report('route_failed')
@@ -160,6 +169,7 @@ class Watcher(transport.Watcher):
             with self.relay.lock:
                 self.relay.trials.clear()
                 self.relay.target = None
+                self.relay.also = set()
             self.ended = True
             self.report('ended', result='connected' if connected else 'not_connected')
 

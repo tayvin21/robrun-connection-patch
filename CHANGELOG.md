@@ -4,6 +4,15 @@ Versions follow `MAJOR.MINOR.PATCH`. The number lives in one file, `VERSION`; a 
 `ROB-RUN-Connection-Patch.zip` attached and its SHA-256 published in the release notes. The patch is experimental
 whatever the release flag says; v0.3.0 and later are published as the GitHub "Latest" release. The updater only installs a release that publishes a SHA-256 and whose download matches it.
 
+## v0.3.2
+
+Three fixes from a player's bug report (GitHub issue #1), checked against the code and covered by new tests:
+
+- Fix: servers named like `battle-g1-gcore-7` (seen on EU hosts) were not recognised, so the patch never started a repair for those players. It now accepts those names.
+- Fix: when the game lists two server addresses for one join (a proxy and the direct server) and switches between them every few seconds, the patch now covers both instead of only the first.
+- Fix: a reconnect step inside a battle no longer removes the working route. It is removed only when the battle ends or a new one starts.
+- Not changed: the report also suggests the game's own connection can sometimes skip the route entirely. That is one PC's observation and is not reproduced here, so it is still open.
+
 ## v0.3.1
 
 - Fix: running `Update.ps1 -Mode Check` by hand no longer prints an empty table; only the launcher asks for the result object.

@@ -69,6 +69,42 @@ class LifecycleTests(unittest.TestCase):
         watcher.read_line('ConnectUpdater.GetAddress completed id=battle host=prod-game-us-0-battle-gcore-17.rob-run.kefir.games. dnsAddresses=1 isProxyPreferred=False addresses=162.216.231.29')
         self.assertEqual(watcher.move.get('server'), 'battle-gcore-17')
 
+    # Reported by a user on GitHub (issue #1, 2026-11-09). Addresses below are documentation-range style stand-ins.
+    G1_LINE = ('ConnectUpdater.GetAddress completed id=battle host=prod-game-eu-0-battle-g1-gcore-7.rob-run.kefir.games. '
+               'dnsAddresses=1 isProxyPreferred=True addresses=5.188.178.115, 45.82.160.89')
+
+    def test_g1_host_names_are_recognised_and_both_addresses_kept(self):
+        watcher = patch.Watcher('does-not-exist', FakeRelay(), lambda *a, **k: None)
+        watcher.read_line('NetworkStep - Changed on "InBattle".')
+        watcher.read_line(self.G1_LINE)
+        self.assertEqual(watcher.move.get('server'), 'battle-g1-gcore-7')
+        self.assertEqual(watcher.move.get('addresses'), ['5.188.178.115', '45.82.160.89'])
+
+    def test_stalled_proxy_join_routes_both_addresses_and_removes_both(self):
+        relay = FakeRelay(); relay.also = set()
+        watcher = patch.Watcher('does-not-exist', relay, lambda *a, **k: None)
+        watcher.read_line('NetworkStep - Changed on "InBattle".')
+        watcher.read_line(self.G1_LINE)
+        watcher.read_line('PeerConnect started id=battle address=5.188.178.115:36650 rtt=60 attempts=0')
+        watcher.move['started'] -= 3
+        watcher.check_stall()
+        self.assertEqual(relay.allowed, {'5.188.178.115', '45.82.160.89'})
+        self.assertEqual(relay.target, ('5.188.178.115', 36650))
+        self.assertEqual(relay.also, {('45.82.160.89', 36650)})
+        watcher.read_line('NetworkStep - Changed on "InRealmNotInBattle".')
+        self.assertFalse(relay.allowed); self.assertFalse(relay.also)
+
+    def test_reconnect_steps_inside_a_battle_keep_the_route(self):
+        relay = FakeRelay()
+        watcher = patch.Watcher('does-not-exist', relay, lambda *a, **k: None)
+        self.start(watcher); watcher.check_stall()
+        self.assertTrue(relay.allowed)
+        for step in ('WaitRegionUserData', 'WaitUserData', 'ConnectToRegion'):
+            watcher.read_line(f'NetworkStep - Changed on "{step}".')
+            self.assertTrue(relay.allowed, step)
+        watcher.read_line('NetworkStep - Changed on "InRealmNotInBattle".')
+        self.assertFalse(relay.allowed)
+
     def test_route_lasts_until_departure_and_rearms_cleanly(self):
         relay = FakeRelay()
         watcher = patch.Watcher('does-not-exist', relay, lambda *a, **k: None)

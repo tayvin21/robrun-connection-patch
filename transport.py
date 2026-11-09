@@ -225,7 +225,9 @@ class Watcher:
 
     def end_move(self):
         if self.move and self.move.get('routed'):
-            self.relay.remove_route(self.move['ip'])
+            # Every address we routed for this join goes away together (see the 2026-11-09 user report, #2 below).
+            for ip in self.move.get('routed_ips') or [self.move['ip']]:
+                self.relay.remove_route(ip)
             if not self.move.get('connected'):
                 log(f"{self.move.get('server')}: not repaired before the server cancelled the join.")
         self.move = None
@@ -240,16 +242,27 @@ class Watcher:
             return
         step = re.search(r'NetworkStep - Changed on "(\w+)"', line)
         if step:
-            self.end_move()
-            if step.group(1) == 'InBattle':
-                self.move = {}
+            # User report (GitHub issue #1, 2026-11-09), bug 3: this used to end the join on EVERY step change. During a
+            # reconnect inside a battle the game logs WaitRegionUserData / WaitUserData while the player is still in
+            # the battle, and that removed the working route mid-fight. Only a new battle or leaving the battle ends it.
+            # (A route can never outlive the helper: the relay removes all routes on exit and when the game restarts.)
+            if step.group(1) in ('InBattle', 'InRealmNotInBattle'):
+                self.end_move()
+                if step.group(1) == 'InBattle':
+                    self.move = {}
             return
         move = self.move
         if move is None:
             return
-        found = re.search(r'GetAddress completed id=battle host=\S*?(battle-gcore-\d+)\S* dnsAddresses=\d+(?: \w+=\S+)*? addresses=([\d.]+)', line)
+        # User report (GitHub issue #1, 2026-11-09), bug 1: some regions use host names like
+        # "prod-game-eu-0-battle-g1-gcore-7", and the old pattern only knew "battle-gcore-N". The helper then never
+        # learned the server name and silently never repaired anything for those players.
+        # Bug 2 (same report): the line can list TWO addresses ("addresses=A, B": the game's proxy and the direct
+        # server) and the game alternates between them about every 7 seconds, so all of them are remembered, not just one.
+        found = re.search(r'GetAddress completed id=battle host=\S*?(battle-[\w-]*gcore-\d+)\S* dnsAddresses=\d+(?: \w+=\S+)*? addresses=([\d.]+(?:, *[\d.]+)*)', line)
         if found:
             move.setdefault('server', found.group(1))
+            move.setdefault('addresses', re.findall(r'\d+\.\d+\.\d+\.\d+', found.group(2))[:4])
             return
         started = re.search(r'PeerConnect started id=battle address=([\d.]+):(\d+) rtt=(\d+)', line)
         if started and 'started' not in move:

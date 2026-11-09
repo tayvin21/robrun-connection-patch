@@ -1,17 +1,24 @@
 [CmdletBinding()]
-param([ValidateSet('Menu','Status','Stop','Restart','Auto','Force','Uninstall')][string]$Mode = 'Menu')
+param([ValidateSet('Menu','Status','Stop','Restart','Auto','Force','Uninstall','Export')][string]$Mode = 'Menu')
 $ErrorActionPreference = 'Stop'
 $Host.UI.RawUI.WindowTitle = 'ROB RUN patch controls'
 $root = [IO.Path]::GetFullPath($PSScriptRoot)
-$patchPath = Join-Path $root 'patch.py'
-$runtimePath = Join-Path $root 'runtime\python.exe'
+$appRoot = $root
+if ((Split-Path $root -Leaf) -eq 'app') { $root = Split-Path $root -Parent }
+$bootstrap = Join-Path $PSScriptRoot 'tools\Bootstrap.ps1'
+if (-not (Test-Path -LiteralPath (Join-Path $appRoot 'SHA256SUMS.txt')) -and (Test-Path -LiteralPath $bootstrap)) {
+    & $bootstrap -Mode $Mode
+    exit $LASTEXITCODE
+}
+$patchPath = Join-Path $appRoot 'patch.py'
+$runtimePath = Join-Path $appRoot 'runtime\python.exe'
 function Get-PatchProcess {
     @(Get-CimInstance Win32_Process -Filter "Name = 'python.exe'" | Where-Object {
         $_.ExecutablePath -eq $runtimePath -and $_.CommandLine -like ('*' + $patchPath + '*') -and $_.CommandLine -notlike '*--guard*'
     })
 }
 function Request-Stop {
-    [IO.File]::WriteAllText((Join-Path $root 'stop.request'),'stop')
+    [IO.File]::WriteAllText((Join-Path $appRoot 'stop.request'),'stop')
     Write-Host 'Stop requested. Leave any relayed game location normally; the patch then exits.'
 }
 function Wait-ForStop {
@@ -31,9 +38,9 @@ try {
     if ($Mode -eq 'Menu') {
         Write-Host 'UNOFFICIAL PATCH - COULD GET YOU BANNED. NO SAFETY GUARANTEE.' -ForegroundColor Yellow
         Write-Host '1 Status   2 Safe stop   3 Restart helper   4 Automatic rearm on/off'
-        Write-Host '5 Emergency stop (may disconnect game)   6 Uninstall   Enter Exit'
+        Write-Host '5 Emergency stop (may disconnect game)   6 Uninstall   7 Export logs   Enter Exit'
         $choice = Read-Host 'Choose'
-        $Mode = switch ($choice) { '1' {'Status'} '2' {'Stop'} '3' {'Restart'} '4' {'Auto'} '5' {'Force'} '6' {'Uninstall'} default {exit 0} }
+        $Mode = switch ($choice) { '1' {'Status'} '2' {'Stop'} '3' {'Restart'} '4' {'Auto'} '5' {'Force'} '6' {'Uninstall'} '7' {'Export'} default {exit 0} }
     }
     $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     if (-not $admin -and $Mode -in @('Status','Restart','Force','Uninstall')) {
@@ -41,10 +48,11 @@ try {
         exit $child.ExitCode
     }
     switch ($Mode) {
+        'Export' { & $runtimePath $patchPath --export }
         'Status' {
             $running = Get-PatchProcess
             if ($running.Count) { Write-Host 'This copy is RUNNING.' } else { Write-Host 'This copy is STOPPED.' }
-            $state = Join-Path $root 'status.json'
+            $state = Join-Path $appRoot 'status.json'
             if (Test-Path -LiteralPath $state) { Write-Host ('Last status: ' + ((Get-Content -LiteralPath $state -Raw | ConvertFrom-Json).status)) }
             Write-Host 'No Windows startup task is installed. Auto rearm stays inside a running helper.'
         }
@@ -53,12 +61,12 @@ try {
             Request-Stop
             Wait-ForStop
             Write-Host 'Restarting the helper. Your game is not restarted.'
-            Start-Process powershell.exe -WindowStyle Normal -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + (Join-Path $root 'Launch.ps1') + '"')
+            Start-Process powershell.exe -WindowStyle Normal -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + (Join-Path $appRoot 'Launch.ps1') + '"')
         }
         'Auto' {
             $answer = Read-Host 'Rearm automatically after leaving a repaired location? Y = on, N = stop after that location'
             if ($answer -notin @('Y','N')) { exit 0 }
-            [IO.File]::WriteAllText((Join-Path $root 'settings.json'), ('{"auto_rearm":' + ($answer -eq 'Y').ToString().ToLowerInvariant() + '}'))
+            [IO.File]::WriteAllText((Join-Path $appRoot 'settings.json'), ('{"auto_rearm":' + ($answer -eq 'Y').ToString().ToLowerInvariant() + '}'))
             Write-Host 'Saved. No game restarts and no Windows autostart are enabled.'
         }
         'Force' {
@@ -73,19 +81,19 @@ try {
             Write-Host 'Removes this extracted patch copy and its local diagnostic files.'
             Write-Host 'Does not remove your game, Tailscale, or the shared Wintun driver.'
             if ((Read-Host 'Type UNINSTALL to continue') -cne 'UNINSTALL') { exit 0 }
-            foreach ($directory in @($root,(Join-Path $root 'runtime'),(Join-Path $root 'logs'))) {
+            foreach ($directory in @($root,$appRoot,(Join-Path $appRoot 'runtime'),(Join-Path $appRoot 'logs'))) {
                 if ((Test-Path -LiteralPath $directory) -and ((Get-Item -LiteralPath $directory -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Uninstall refuses linked directories. Stop the patch and review the folder manually.' }
             }
             Request-Stop
             Wait-ForStop
-            $manifest = Join-Path $root 'SHA256SUMS.txt'
+            $manifest = Join-Path $appRoot 'SHA256SUMS.txt'
             if (-not (Test-Path -LiteralPath $manifest)) { throw 'Release manifest missing. Patch stopped; remove its extracted folder manually.' }
-            $owned = @('START.cmd','EXPORT-LOGS.cmd','CONTROLS.cmd','UNINSTALL.cmd','Launch.ps1','Controls.ps1','patch.py','transport.py','diagnostics.py','README.md','LICENSE','THIRD-PARTY.md','WINTUN-LICENSE.txt','wintun.dll')
+            $owned = @('START.cmd','UNINSTALL.cmd','app/README.txt','app/Launch.ps1','app/Controls.ps1','app/patch.py','app/transport.py','app/diagnostics.py','app/LICENSE','app/THIRD-PARTY.md','app/WINTUN-LICENSE.txt','app/wintun.dll')
             $kept = 0
             foreach ($line in [IO.File]::ReadAllLines($manifest)) {
                 if ($line -notmatch '^([a-f0-9]{64})  (.+)$') { throw 'Invalid manifest.' }
                 $expected = $Matches[1]; $relative = $Matches[2]
-                if ($relative -notin $owned -and $relative -notmatch '^runtime/[A-Za-z0-9_.-]+$') { throw 'Unexpected uninstall entry.' }
+                if ($relative -notin $owned -and $relative -notmatch '^app/runtime/[A-Za-z0-9_.-]+$') { throw 'Unexpected uninstall entry.' }
                 $target = [IO.Path]::GetFullPath((Join-Path $root $relative))
                 if (-not $target.StartsWith(($root.TrimEnd('\') + '\'),[StringComparison]::OrdinalIgnoreCase)) { throw 'Path outside patch folder.' }
                 if (Test-Path -LiteralPath $target) {
@@ -93,11 +101,11 @@ try {
                     else { $kept++ }
                 }
             }
-            foreach ($relative in @('stop.request','status.json','settings.json','diagnostics-share.txt','logs\diagnostics.jsonl','logs\diagnostics.previous.jsonl','SHA256SUMS.txt')) {
+            foreach ($relative in @('app\stop.request','app\status.json','app\settings.json','app\diagnostics-share.txt','app\logs\diagnostics.jsonl','app\logs\diagnostics.previous.jsonl','app\SHA256SUMS.txt')) {
                 $target = Join-Path $root $relative
                 if (Test-Path -LiteralPath $target -PathType Leaf) { Remove-Item -LiteralPath $target -Force }
             }
-            foreach ($relative in @('runtime','logs')) {
+            foreach ($relative in @('app\runtime','app\logs','app')) {
                 $target = Join-Path $root $relative
                 if ((Test-Path -LiteralPath $target -PathType Container) -and -not (Get-ChildItem -LiteralPath $target -Force | Select-Object -First 1)) { Remove-Item -LiteralPath $target }
             }

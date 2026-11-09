@@ -1,6 +1,14 @@
 [CmdletBinding()]
 param([switch]$Elevated, [switch]$NoLogs)
 $ErrorActionPreference = 'Stop'
+$installRoot = $PSScriptRoot
+if ((Split-Path $PSScriptRoot -Leaf) -eq 'app') { $installRoot = Split-Path $PSScriptRoot -Parent }
+$manifest = Join-Path $PSScriptRoot 'SHA256SUMS.txt'
+$bootstrap = Join-Path $PSScriptRoot 'tools\Bootstrap.ps1'
+if (-not (Test-Path -LiteralPath $manifest) -and (Test-Path -LiteralPath $bootstrap)) {
+    & $bootstrap -Mode Start
+    exit $LASTEXITCODE
+}
 $Host.UI.RawUI.WindowTitle = 'ROB RUN - Unofficial Connection Patch'
 try {
     Write-Host ''
@@ -19,18 +27,20 @@ try {
         Write-Host ''
         Write-Host 'R = accept risk and run (small local diagnostic logs ON)'
         Write-Host 'N = accept risk and run without logs'
+        Write-Host 'S = safe stop    O = options / export logs    U = uninstall'
         Write-Host 'Anything else = cancel'
-        $answer = Read-Host 'Choose R or N'
+        $answer = Read-Host 'Choose'
+        $controlMode = switch ($answer) { 'S' {'Stop'} 'O' {'Menu'} 'U' {'Uninstall'} default {$null} }
+        if ($controlMode) { & (Join-Path $PSScriptRoot 'Controls.ps1') -Mode $controlMode; exit $LASTEXITCODE }
         if ($answer -notin @('R','N')) { exit 0 }
         $NoLogs = $answer -eq 'N'
     }
-    $manifest = Join-Path $PSScriptRoot 'SHA256SUMS.txt'
     if (-not (Test-Path -LiteralPath $manifest)) { throw 'Release files missing. Download the release ZIP and extract it fully.' }
-    $rootPrefix = [IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\') + '\'
+    $rootPrefix = [IO.Path]::GetFullPath($installRoot).TrimEnd('\') + '\'
     foreach ($line in [IO.File]::ReadAllLines($manifest)) {
         if ($line -notmatch '^([a-f0-9]{64})  (.+)$') { throw 'Invalid integrity manifest.' }
         $expectedHash = $Matches[1]
-        $full = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot $Matches[2]))
+        $full = [IO.Path]::GetFullPath((Join-Path $installRoot $Matches[2]))
         if (-not $full.StartsWith($rootPrefix,[StringComparison]::OrdinalIgnoreCase)) { throw 'Invalid manifest path.' }
         if ((Get-FileHash -LiteralPath $full -Algorithm SHA256).Hash -ne $expectedHash) { throw 'Release integrity check failed. Re-download from the official repository release.' }
     }

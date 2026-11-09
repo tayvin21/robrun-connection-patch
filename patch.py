@@ -18,7 +18,7 @@ sys.dont_write_bytecode = True
 import diagnostics
 import transport
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 ROOT = Path(__file__).resolve().parent
 WARNING = '''UNOFFICIAL EXPERIMENTAL PATCH - NOT APPROVED BY KEFIR OR EASY ANTI-CHEAT.
 THIS COULD GET YOU BANNED. ACCOUNT SAFETY IS UNKNOWN. USE AT YOUR OWN RISK.
@@ -371,7 +371,7 @@ def main():
     opt = parser.parse_args()
     if opt.export:
         count = diagnostics.export(ROOT / 'logs', ROOT / 'diagnostics-share.txt')
-        print(f'Exported {count} events to diagnostics-share.txt (maximum 128 KiB). Review before sharing. Nothing uploaded.')
+        print(f'Exported {count} events to {ROOT / "diagnostics-share.txt"} (maximum 128 KiB). Review before sharing. Nothing uploaded.')
         return 0
     if opt.guard:
         guard(opt.guard)

@@ -1,0 +1,3 @@
+Downloads paused during investigation of the v0.2.0 ZIP detection:
+Microsoft Defender Trojan:Script/Wacatac.B!ml.
+No false-positive determination has been confirmed. Do not override antivirus protection.

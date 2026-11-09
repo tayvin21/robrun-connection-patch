@@ -1,5 +1,6 @@
 *.zip
 build/
+.ready-to-run/
 logs/
 diagnostics-share.txt
 settings.json

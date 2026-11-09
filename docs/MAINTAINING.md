@@ -78,7 +78,10 @@ too low to affect servers. The server-side changes, the game update, or the atta
 stalls were still occurring on this PC after the announced server patch. One mechanism is conceivable but untested: while a
 route is active, the relayed traffic leaves through the physical network adapter (`IP_UNICAST_IF`, chosen with
 `GetBestInterface`), so for a player whose default route goes through a VPN or an unusual path it could take a different
-route to that one battle server. To test properly, log round-trip time to the battle server with and without the relay on the same
+route to that one battle server. The owner's reading (perceived, not measured): even if the real ping does not change, players may simply feel less lag. That is
+plausible and is the one defensible form of the claim: a stalled join that used to hang for a minute or more now connects in
+about 5 seconds, and waiting on a join is what many players experience as "lag". The measured fact is time to connect, not
+ping, and it is the only thing worth stating publicly. To test properly, log round-trip time to the battle server with and without the relay on the same
 join (alternate runs, same server, same hour) and compare; until that exists, keep this out of the README and release notes.
 
 **Not fixed and not fixable here:** the server sometimes kicks a player right after a clean connect

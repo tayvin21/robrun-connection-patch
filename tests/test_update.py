@@ -60,6 +60,10 @@ class UpdateTests(unittest.TestCase):
     def installed(self):
         return sorted(p.name for p in self.parent.iterdir() if p.name.startswith('ROB-RUN-Connection-Patch-v'))
 
+    def test_check_prints_no_object_table_unless_asked(self):
+        code, out = self.run_update('Check', [release(digest=self.digest)])
+        self.assertNotIn('Newer', out)
+
     def test_check_reports_newer_release(self):
         code, out = self.run_update('Check', [release(digest=self.digest)])
         self.assertIn('Update available: v9.9.9', out)

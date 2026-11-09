@@ -3,6 +3,7 @@ param(
     [ValidateSet('Check', 'Install')][string]$Mode = 'Check',
     [switch]$Quiet,
     [switch]$Force,
+    [switch]$PassThru,
     # Testing hooks. They are only reachable by whoever runs this script locally.
     [string]$FeedFile,
     [string]$LocalZip
@@ -185,7 +186,7 @@ try {
         if ($info) {
             if ($info.Newer) { Write-Note "Update available: v$($info.Latest) (this is v$($info.Current))." 'Cyan' }
             else { Write-Note "Up to date (v$($info.Current))." 'Green' }
-            $info
+            if ($PassThru) { $info }
         }
         return
     }

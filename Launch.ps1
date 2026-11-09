@@ -24,7 +24,7 @@ try {
         $update = $null
         $updater = Join-Path $PSScriptRoot 'Update.ps1'
         if (Test-Path -LiteralPath $updater) {
-            try { $update = & $updater -Mode Check -Quiet | Select-Object -Last 1 } catch { $update = $null }
+            try { $update = & $updater -Mode Check -Quiet -PassThru | Select-Object -Last 1 } catch { $update = $null }
         }
         if ($update -and $update.Newer) {
             $UpdateVersion = $update.Latest.ToString()

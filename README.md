@@ -1,5 +1,13 @@
 # ROB RUN Connection Patch
 
+> **ARCHIVED (Nov 9, 2026). This project is no longer maintained and you most likely do not need it.**
+>
+> **What it was:** an unofficial helper for a ROB RUN bug where some battle joins stalled. The game kept retrying a server that never answered, and the join eventually failed. The helper watched the game's own log, noticed a stalled join, and re-sent the connection request from a fresh network port through a temporary route, so the join could finish without restarting the game.
+>
+> **Status:** the developers appear to have fixed the underlying problem. After the game updates and server changes on Nov 9, 2026 (build 26549963), a short test of six battle joins on one PC showed no stalled joins at all, with the helper switched off. That is a small sample and not proof, but it is why this was archived. Being kicked from a match shortly after connecting is a separate, server-side problem that this helper never fixed.
+>
+> **Please do not run it unless you are seeing the original stall again.** It is unofficial, can get you banned, and needs administrator access. Please do not share it further. If a stall comes back, report it to the game developers first.
+
 > **UNOFFICIAL. EXPERIMENTAL. NOT APPROVED BY KEFIR OR EASY ANTI-CHEAT.**
 >
 > **THIS COULD GET YOU BANNED. ACCOUNT SAFETY IS UNKNOWN. USE AT YOUR OWN RISK.**
@@ -12,13 +20,9 @@ Attempts to recover stalled server joins without restarting ROB RUN.
 
 **Recommended version: the [latest release](https://github.com/tayvin21/robrun-connection-patch/releases/latest).** Game build 26535791 (Nov 9, 2026) broke v0.2.4 and older: they no longer recognise a stalled join and do nothing. Use v0.2.5 or newer. See [CHANGELOG.md](CHANGELOG.md) for every version.
 
-## Sharing this
+## Sharing
 
-If you feel comfortable doing so, please share this with friends who have the same joining problem, and ask them to read the disclaimers at the top first. If you do share it, please do it respectfully:
-
-- **Don't advertise it.** Share it when someone asks, or complains about the problem, and include the disclaimer: unofficial, could get you banned, use at your own risk.
-- **Respect the Discord link rule.** The game's Discord server mutes anyone who posts an outside link (https://...), including a GitHub link. Only Discord server invites are allowed. Do not post this page's link there and do not try to get around the rule. If someone there asks for it or complains about the problem, share it somewhere links are allowed, and include the disclaimer.
-- **Respect the game developers.** This is an unofficial workaround for a connection problem. It is not approved by them, and nothing here is meant to cause them any trouble.
+This project is archived, so it should not be shared or advertised any more. Respect the game developers: this was an unofficial workaround, never approved by them.
 
 ## How to run
 

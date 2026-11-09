@@ -10,7 +10,7 @@ Attempts to recover stalled server joins without restarting ROB RUN. Limited liv
 
 ## How to run
 
-1. [Download **ROB-RUN-Connection-Patch.zip**](https://github.com/tayvin21/robrun-connection-patch/releases/latest). Windows 10/11 **x64** only.
+1. [Download **ROB-RUN-Connection-Patch.zip**](https://github.com/tayvin21/robrun-connection-patch/releases/download/v0.2.0/ROB-RUN-Connection-Patch.zip). Windows 10/11 **x64** only.
 2. **Extract all files.** Start ROB RUN normally through Steam.
 3. Double-click **START.cmd**, read the warning, choose **R** (local logs) or **N** (no logs), and approve the administrator prompt.
 

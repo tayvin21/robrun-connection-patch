@@ -17,7 +17,7 @@ Attempts to recover stalled server joins without restarting ROB RUN.
 If you feel comfortable doing so, please share this with friends who have the same joining problem, and ask them to read the disclaimers at the top first. If you do share it, please do it respectfully:
 
 - **Don't advertise it.** Share it when someone asks, or complains about the problem, and include the disclaimer: unofficial, could get you banned, use at your own risk.
-- **Respect link restrictions.** Some communities block posts that contain links (https) and will block you for posting one. Don't work around that. Leave the link out, or skip it, and only share it there if someone asks.
+- **Respect the Discord link rule.** The game's Discord server mutes anyone who posts an outside link (https://...), including a GitHub link. Only Discord server invites are allowed. Do not post this page's link there and do not try to get around the rule. If someone there asks for it or complains about the problem, share it somewhere links are allowed, and include the disclaimer.
 - **Respect the game developers.** This is an unofficial workaround for a connection problem. It is not approved by them, and nothing here is meant to cause them any trouble.
 
 ## How to run

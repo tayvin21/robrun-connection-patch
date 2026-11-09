@@ -221,6 +221,7 @@ class Watcher:
         self.position = os.path.getsize(path) if os.path.exists(path) else 0
         self.partial = b''
         self.move = None
+        self.observer = None
 
     def end_move(self):
         if self.move and self.move.get('routed'):
@@ -230,6 +231,11 @@ class Watcher:
         self.move = None
 
     def read_line(self, line):
+        if self.observer is not None:
+            try:
+                self.observer(line)
+            except Exception:
+                self.observer = None  # the status page must never interfere with a repair
         if 'id=battle' not in line and 'NetworkStep' not in line:
             return
         step = re.search(r'NetworkStep - Changed on "(\w+)"', line)

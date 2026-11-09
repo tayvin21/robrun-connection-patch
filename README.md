@@ -26,6 +26,14 @@ The window shows **ARMED / TESTING / CONNECTED**. Press **Enter**, or choose **S
 
 **v0.2.4:** cleanup only, no intended behavior change. **v0.2.3:** removes the one-hour idle shutdown. The helper stays armed while the game is running unless you stop it or disable automatic rearming. Retry limits now show a warning. **PATCH IS STOPPED** means an open window is no longer helping. For upgrades, safely stop the old copy before running the new ZIP from a separate folder.
 
+## Live status views (v0.3.0, preview)
+
+While the patch runs, its window shows an animated live view instead of scrolling lines: how many servers the game is connected to or connecting to (account, region, battle), every connection attempt with its timing, and what the patch did and when. Keys: **1 2 3** pick a server, **ENTER** or **S** safe stop. A web version of the same facts is served at an address like `http://127.0.0.1:38457/`; **DASHBOARD.cmd** opens it. The web page has a join history with filters, a per-attempt timeline, light and dark themes, and a button that copies a plain-text summary of one join for bug reports.
+
+Try both **without the game, without administrator rights and without any network change**: **DEMO-CONSOLE.cmd** and **DEMO-WEB.cmd** replay a scripted session (a clean join, a server-side kick, a stall the patch could not see, and two stalls it repaired).
+
+Privacy and safety: the page listens on this PC only (127.0.0.1), refuses requests with any other Host header, accepts reads only, sends a strict content security policy, and keeps everything in memory. It reads only the game log's server names, addresses, timings and outcomes; account tokens and player ids are never parsed, stored or shown. To choose a view, create `settings.json` next to `patch.py` with `{"view": "console"}`, `"web"`, `"both"` (default) or `"plain"` (the old scrolling text).
+
 Choose **O** in START for status, helper restart, automatic rearming, emergency stop and log export. **UNINSTALL.cmd** removes the patch; it keeps your game and shared drivers. Technical files are in **app/**. No Windows autostart or automatic game restart is installed.
 
 ## What it does

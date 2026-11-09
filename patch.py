@@ -16,10 +16,13 @@ import time
 import zlib
 
 sys.dont_write_bytecode = True
+import console
+import dashboard
+import demo
 import diagnostics
 import transport
 
-VERSION = '0.2.5'
+VERSION = '0.3.0'
 ROOT = Path(__file__).resolve().parent
 WARNING = '''UNOFFICIAL EXPERIMENTAL PATCH - NOT APPROVED BY KEFIR OR EASY ANTI-CHEAT.
 THIS COULD GET YOU BANNED. ACCOUNT SAFETY IS UNKNOWN. USE AT YOUR OWN RISK.
@@ -182,6 +185,16 @@ def auto_rearm_enabled():
         return False
 
 
+def view_setting():
+    """Which live view to show: console, web, both or plain (settings.json key 'view')."""
+    try:
+        with (ROOT / 'settings.json').open('rb') as stream:
+            value = json.loads(stream.read(4097)).get('view')
+        return value if value in ('console', 'web', 'both', 'plain') else 'both'
+    except (OSError, ValueError, AttributeError):
+        return 'both'
+
+
 def report_transport(text, report):
     if 'SERVER ANSWERED' in text:
         report('reply')
@@ -193,7 +206,7 @@ def report_transport(text, report):
         report('budget_limit')
 
 
-def watch_session(watcher, relay, guardian, stopping, report):
+def watch_session(watcher, relay, guardian, stopping, report, tracker=None):
     next_game_check = 0
     notified = False
     while True:
@@ -204,6 +217,8 @@ def watch_session(watcher, relay, guardian, stopping, report):
             if time.monotonic() >= next_game_check:
                 game = subprocess.run(['powershell.exe', '-NoProfile', '-Command', "if (Get-Process -Name 'ROB RUN' -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }"], capture_output=True, creationflags=transport.CREATE_NO_WINDOW, timeout=15)
                 next_game_check = time.monotonic() + 5
+                if tracker:
+                    tracker.set_game(game.returncode == 0)
                 if game.returncode == 1:
                     watcher.end_move()
                     report('game_exit')
@@ -211,6 +226,9 @@ def watch_session(watcher, relay, guardian, stopping, report):
                 if game.returncode != 0:
                     raise OSError('Could not check game process')
             watcher.poll()
+            if tracker:
+                with relay.lock:
+                    tracker.set_relay(routes=len(relay.allowed), flows=len(relay.flows), ports_hour=len(relay.opened), port_budget=relay.port_budget)
             if relay.error:
                 raise RuntimeError(relay.error)
             if guardian.poll() is not None:
@@ -281,9 +299,20 @@ def run(opt):
     diag = diagnostics.Diagnostics(ROOT / 'logs', enabled=not opt.no_logs)
     tun = relay = pump = None
     stopping = threading.Event()
+    tracker = dashboard.Tracker(VERSION)
+    page = None
+    live = []
+
+    def say(text):
+        if live:
+            live[0].log(text)
+        else:
+            print(text, flush=True)
+
 
     def report(event, **fields):
         diag.emit(event, **fields)
+        tracker.tool_event(event, **fields)
         with contextlib.suppress(OSError):
             (ROOT / 'status.json').write_text(json.dumps({'pid': os.getpid(), 'status': event, 'version': VERSION}), encoding='utf-8')
         labels = {'startup': 'STARTING', 'armed': 'ARMED - waiting for a stalled join',
@@ -297,12 +326,12 @@ def run(opt):
                   'game_exit': 'STOPPING - ROB RUN is no longer running',
                   'auto_stop': 'STOPPING - automatic rearm is disabled in Options'}
         if event == 'connect' and fields.get('phase') == 'fresh_proposal' and fields.get('changed') == 1:
-            print('TESTING - fresh handshake proposed; waiting for reply', flush=True)
+            say('TESTING - fresh handshake proposed; waiting for reply')
         elif event == 'connected':
             changed = any(p.changed for p in relay.trials.values()) if relay else False
-            print('CONNECTED - after handshake change (cause not proven)' if changed else 'CONNECTED - before handshake change', flush=True)
+            say('CONNECTED - after handshake change (cause not proven)' if changed else 'CONNECTED - before handshake change')
         elif event in labels:
-            print(labels[event], flush=True)
+            say(labels[event])
 
     transport.log = lambda text: report_transport(text, report)
     try:
@@ -345,19 +374,47 @@ def run(opt):
         if starts:
             for line in lines[starts[-1]:]:
                 watcher.read_line(line)
+        if opt.view != 'plain':
+            tracker.backfill(transport.DEFAULT_LOG)
+            if not opt.no_logs:
+                tracker.backfill_tool(ROOT / 'logs' / 'diagnostics.jsonl')
+            watcher.observer = tracker.feed
+        if opt.view in ('web', 'both') and not opt.no_dashboard:
+            page = dashboard.serve(tracker, ROOT / 'ui')
+            if page:
+                with contextlib.suppress(OSError):
+                    (ROOT / 'dashboard.json').write_text(json.dumps({'url': page[1], 'pid': os.getpid()}), encoding='utf-8')
+                say('Status page (this PC only): ' + page[1] + '  (DASHBOARD.cmd opens it)')
+        if opt.view in ('console', 'both') and console.enable_vt():
+            live.append(console.Live(tracker))
+            live[0].start()
         report('armed')
-        print('Press ENTER to stop safely. If connected through the relay, leave the location first.\nLocal diagnostics: ' + ('OFF' if opt.no_logs else 'ON (256 KiB maximum; never uploaded)'), flush=True)
+        say('Press ENTER to stop safely. If connected through the relay, leave the location first. Local diagnostics: ' + ('OFF' if opt.no_logs else 'ON (256 KiB maximum; never uploaded)'))
+
         def request_stop():
             with contextlib.suppress(EOFError):
                 input()
             stopping.set()
-        threading.Thread(target=request_stop, daemon=True).start()
-        watch_session(watcher, relay, guardian, stopping, report)
+        if live:
+            threading.Thread(target=console.key_loop, args=(live[0], stopping.set), daemon=True).start()
+        else:
+            threading.Thread(target=request_stop, daemon=True).start()
+        watch_session(watcher, relay, guardian, stopping, report, tracker)
     except Exception as error:
         report('error', result=type(error).__name__)
+        if live:
+            live.pop().close()
         print('Patch stopped because of an error. Do not disable EAC or antivirus to run it.', flush=True)
         return 2
     finally:
+        if live:
+            live.pop().close()
+        if page:
+            with contextlib.suppress(Exception):
+                page[0].shutdown()
+                page[0].server_close()
+            with contextlib.suppress(OSError):
+                (ROOT / 'dashboard.json').unlink()
         try:
             if relay:
                 relay.stop = True
@@ -372,13 +429,53 @@ def run(opt):
     return 0
 
 
+def run_demo(opt):
+    """Replay a scripted session through the same views. No game, no admin rights, no network changes."""
+    tracker = dashboard.Tracker(VERSION + ' demo')
+    stop = threading.Event()
+    page = live = None
+    if opt.view in ('web', 'both'):
+        page = dashboard.serve(tracker, ROOT / 'ui')
+        print('DEMO status page (this PC only): ' + (page[1] if page else 'could not start'), flush=True)
+    if opt.view in ('console', 'both') and console.enable_vt():
+        live = console.Live(tracker)
+        if page:
+            live.log('Web view: ' + page[1])
+        live.log('DEMO: a scripted session, not your game')
+        live.start()
+        threading.Thread(target=console.key_loop, args=(live, stop.set), daemon=True).start()
+    elif opt.view in ('console', 'both'):
+        print('This window cannot show the animated view; open the web page instead.', flush=True)
+    if live is None:
+        print('Press ENTER to end the demo.', flush=True)
+        threading.Thread(target=lambda: (input(), stop.set()) if sys.stdin and sys.stdin.isatty() else None, daemon=True).start()
+    demo.start(tracker, stop, opt.demo_speed)
+    try:
+        while not stop.is_set():
+            time.sleep(0.2)
+    except KeyboardInterrupt:
+        stop.set()
+    finally:
+        if live:
+            live.close()
+        if page:
+            page[0].shutdown()
+            page[0].server_close()
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--accept-risk', action='store_true')
     parser.add_argument('--no-logs', action='store_true')
+    parser.add_argument('--no-dashboard', action='store_true')
+    parser.add_argument('--view', choices=('console', 'web', 'both', 'plain'), default=None)
+    parser.add_argument('--demo', action='store_true')
+    parser.add_argument('--demo-speed', type=float, default=1.0)
     parser.add_argument('--export', action='store_true')
     parser.add_argument('--guard', type=int)
     opt = parser.parse_args()
+    opt.view = opt.view or (view_setting() if not opt.demo else 'both')
     if opt.export:
         count = diagnostics.export(ROOT / 'logs', ROOT / 'diagnostics-share.txt')
         print(f'Exported {count} events to {ROOT / "diagnostics-share.txt"} (maximum 128 KiB). Review before sharing. Nothing uploaded.')
@@ -386,6 +483,8 @@ def main():
     if opt.guard:
         guard(opt.guard)
         return 0
+    if opt.demo:
+        return run_demo(opt)
     return run(opt)
 
 

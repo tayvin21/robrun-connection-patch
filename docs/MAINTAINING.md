@@ -125,3 +125,4 @@ project account is not detected, and releases are not code-signed.
   not add network code to the elevated Python process.
 - Keep the AI-assistance, unofficial, ban-risk and dependency-licence disclosures in the README.
 - Do not restart or attach to the game process; read files and logs only.
+- Test fixtures and docs use fake tokens and ids only. Real values from `Player.log` (authorization token, player id, room id) must never be copied into the repository; a secret scanner will flag them and git history keeps them.

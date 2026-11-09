@@ -9,7 +9,10 @@ import console
 import tracking
 import demo
 
-SECRET = 'FAKE-TOKEN-FOR-TESTS'
+# Fake values only. Never paste real tokens or ids from a game log into a test.
+FAKE_TOKEN = 'FAKE-TOKEN-FOR-TESTS'
+FAKE_ROOM = '11111111-1111-4111-8111-111111111111'
+FAKE_PEER = '22222222-2222-4222-8222-222222222222'
 
 
 def stamp(tracker, text):
@@ -23,7 +26,7 @@ def clean_join(tracker, host='us-0-battle-gcore-27', ip='162.216.231.231'):
     stamp(tracker, f'[Network] ConnectUpdater.GetAddress completed id=battle host=prod-game-{host}.rob-run.kefir.games. dnsAddresses=1 isProxyPreferred=False addresses={ip}')
     stamp(tracker, f'[Network] ConnectUpdater.PeerConnect started id=battle address={ip}:36606 rtt=42 attempts=0')
     stamp(tracker, f'[Network] ConnectUpdater.PeerConnect complete id=battle address={ip}:36606')
-    stamp(tracker, f'[Network] ConnectUpdater.PeerAuthorize started id=battle destination=11111111-1111-4111-8111-111111111111 peer=22222222-2222-4222-8222-222222222222 token={SECRET} attempts=1')
+    stamp(tracker, f'[Network] ConnectUpdater.PeerAuthorize started id=battle destination={FAKE_ROOM} peer={FAKE_PEER} token={FAKE_TOKEN} attempts=1')
     stamp(tracker, '[Network] ConnectUpdater.Connect completed id=battle')
     stamp(tracker, '[Network] ConnectUpdater.Connect completed id=battle.')
 
@@ -38,7 +41,7 @@ class TrackerTests(unittest.TestCase):
         self.assertEqual(snap['joins'][0]['outcome'], 'direct')
         self.assertEqual(snap['joins'][0]['host'], 'us-0-battle-gcore-27')
         blob = json.dumps(snap)
-        for forbidden in (SECRET, '11111111', '22222222', 'token'):
+        for forbidden in (FAKE_TOKEN, FAKE_ROOM, FAKE_PEER, '11111111', '22222222', 'token'):
             self.assertNotIn(forbidden, blob)
 
     def test_stall_retries_are_counted_and_patch_repair_is_attributed(self):

@@ -66,7 +66,7 @@ Anti-Cheat).
 
 ## Evidence so far (be careful what you claim)
 
-Build 26535791, 2026-11-09, one player: v0.2.5 and v0.3.x repaired 4 of 4 stalled joins on four different servers,
+Build 26535791, 2026-11-09, one player: v0.2.5 and v0.3.x repaired 5 of 5 stalled joins on four different servers,
 each within about 5 seconds of the join starting (the patch waits 2 seconds before acting). Before the fix the same
 stall retried 11 times over a minute and failed. This is a small sample from one machine. It is not proof of cause for
 every report, and it says nothing about the separate problem below.
